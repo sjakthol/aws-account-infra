@@ -1,0 +1,152 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Infra VPC for services
+
+Parameters:
+  VpcCidr:
+    Description: The CIDR for the VPC
+    Type: String
+    Default: '10.0.0.0/16'
+    AllowedPattern : "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})"
+    ConstraintDescription : 'must be a valid CIDR range of the form x.x.x.x/x.'
+
+Resources:
+  Vpc:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VpcCidr
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - { Key: Name, Value: !Sub '${AWS::StackName}-vpc' }
+
+  VpcIpv6Cidr:
+    Type: AWS::EC2::VPCCidrBlock
+    Properties:
+      AmazonProvidedIpv6CidrBlock: true
+      VpcId: !Ref Vpc
+
+  VpcDhcpOptions:
+    Type: AWS::EC2::DHCPOptions
+    Properties:
+      # Note: Does not work in us-east-1
+      DomainName: !Sub '${AWS::Region}.compute.internal'
+      DomainNameServers:
+        - AmazonProvidedDNS
+
+  VpcDhcpOptionsAssoc:
+    Type: "AWS::EC2::VPCDHCPOptionsAssociation"
+    Properties:
+      DhcpOptionsId: !Ref VpcDhcpOptions
+      VpcId: !Ref Vpc
+
+  VpcIgw:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - { Key: Name, Value: !Sub '${AWS::StackName}-igw' }
+
+  VpcIgwAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref Vpc
+      InternetGatewayId: !Ref VpcIgw
+
+  EgressOnlyIgw:
+    Type: AWS::EC2::EgressOnlyInternetGateway
+    Properties:
+      VpcId: !Ref Vpc
+
+  S3Endpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          -
+            Effect: Allow
+            Principal: '*'
+            Action: '*'
+            Resource: 'arn:aws:s3:::*'
+      RouteTableIds:
+        - !Ref PrivateWithIPv6RouteTable
+        - !Ref PrivateWithEndpointsRouteTable
+      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.s3'
+      VpcId: !Ref Vpc
+
+  PrivateRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref Vpc
+      Tags:
+        - { Key: Name, Value: !Sub '${AWS::StackName}-rt-private' }
+
+  PrivateWithEndpointsRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref Vpc
+      Tags:
+        - { Key: Name, Value: !Sub '${AWS::StackName}-rt-private-with-endpoints' }
+
+  PrivateWithIPv6RouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref Vpc
+      Tags:
+        - { Key: Name, Value: !Sub '${AWS::StackName}-rt-private-with-ipv6' }
+
+  PrivateWithIPv6RouteTableRouteToInternet:
+    Type: AWS::EC2::Route
+    Properties:
+      DestinationIpv6CidrBlock: '::/0'
+      EgressOnlyInternetGatewayId: !Ref EgressOnlyIgw
+      RouteTableId: !Ref PrivateWithIPv6RouteTable
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref Vpc
+      Tags:
+        - { Key: Name, Value: !Sub '${AWS::StackName}-rt-public' }
+
+  PublicRouteTableRouteToIPv4Internet:
+    Type: AWS::EC2::Route
+    Properties:
+      DestinationCidrBlock: '0.0.0.0/0'
+      GatewayId: !Ref VpcIgw
+      RouteTableId: !Ref PublicRouteTable
+
+  PublicRouteTableRouteToIPv6Internet:
+    Type: AWS::EC2::Route
+    Properties:
+      DestinationIpv6CidrBlock: '::/0'
+      GatewayId: !Ref VpcIgw
+      RouteTableId: !Ref PublicRouteTable
+
+Outputs:
+  VpcId:
+    Description: The ID of the VPC
+    Value: !Ref Vpc
+
+  VpcIpv4Cidr:
+    Description: The IPv4 CIDR for the VPC
+    Value: !GetAtt Vpc.CidrBlock
+
+  VpcIpv6Cidr:
+    Description: The IPv6 CIDR for the VPC
+    Value: !Select [0, !GetAtt Vpc.Ipv6CidrBlocks]
+
+  PrivateRouteTable:
+    Description: The ID of the private route table of the VPC
+    Value: !Ref PrivateRouteTable
+
+  PrivateWithEndpointsRouteTable:
+    Description: The ID of the private-with-vpc-endpoints route table of the VPC
+    Value: !Ref PrivateWithEndpointsRouteTable
+
+  PrivateWithIPv6RouteTable:
+    Description: The ID of the private-with-ivp6 route table of the VPC
+    Value: !Ref PrivateWithIPv6RouteTable
+
+  PublicRouteTable:
+    Description: The ID of the public route table (IPv4 & IPv6) of the VPC
+    Value: !Ref PublicRouteTable

@@ -1,0 +1,69 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: CloudTrail logging for the account
+
+Parameters:
+  TrailBucketName:
+    Description: The name of the S3 bucket to create for the CloudTrail logs
+    Type: String
+    MinLength: 1
+    MaxLength: 255
+    Default: ew1-infra-trail
+
+  TrailKeyPrefix:
+    Description: A prefix for the CloudTrail files in the bucket
+    Type: String
+    Default: ''
+
+  TrailExpirationInDays:
+    Description: How many days to store the CloudTrail logs in S3
+    Type: Number
+    MinValue: 1
+    Default: 3650
+
+Resources:
+  TrailBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    Properties:
+        BucketName: !Ref TrailBucketName
+        LifecycleConfiguration:
+          Rules:
+            -
+              ExpirationInDays: !Ref TrailExpirationInDays
+              Status: Enabled
+
+  TrailBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref TrailBucket
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          -
+            Sid: CloudTrailAclCheck
+            Effect: Allow
+            Principal:
+              Service: cloudtrail.amazonaws.com
+            Action: s3:GetBucketAcl
+            Resource: !GetAtt TrailBucket.Arn
+          -
+            Sid: CloudTrailPutObject
+            Effect: Allow
+            Principal:
+              Service: cloudtrail.amazonaws.com
+            Action: s3:PutObject
+            Resource: !Sub '${TrailBucket.Arn}/${TrailKeyPrefix}AWSLogs/${AWS::AccountId}/*'
+            Condition:
+              StringEquals:
+                's3:x-amz-acl': bucket-owner-full-control
+
+  Trail:
+    Type: AWS::CloudTrail::Trail
+    DependsOn:
+      - TrailBucketPolicy
+    Properties:
+      IncludeGlobalServiceEvents: true
+      IsLogging: true
+      IsMultiRegionTrail: true
+      S3BucketName: !Ref TrailBucketName
+      S3KeyPrefix: !Ref TrailKeyPrefix
