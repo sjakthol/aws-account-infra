@@ -1,3 +1,7 @@
+Infrastructure setup for an AWS account backed by AWS CloudFormation.
+
+## What is this?
+
 This repository contains CloudFormation templates for an AWS infrastructure
 setup that contains the following components:
 

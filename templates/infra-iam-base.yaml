@@ -164,6 +164,26 @@ Resources:
               BoolIfExists:
                 aws:MultiFactorAuthPresent: false
 
+  ViewBillingPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: Provides access to billing information
+      ManagedPolicyName: billing-read-only
+      Path: /
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: AllowToViewBillingInformation
+            Effect: Allow
+            Action:
+              - 'aws-portal:View*'
+            Resource: '*'
+          - Sid: DenyAccessToPaymentMethods
+            Effect: Deny
+            Action:
+              - 'aws-portal:ViewPaymentMethods'
+            Resource: '*'
+
   ## Groups ##
   AllUsers:
     Type: AWS::IAM::Group
@@ -197,6 +217,7 @@ Resources:
       GroupName: admin-users
       ManagedPolicyArns:
         - !Ref ElevateToAccountAdmin
+        - !Ref ViewBillingPolicy
       Path: /
 
 Outputs:
