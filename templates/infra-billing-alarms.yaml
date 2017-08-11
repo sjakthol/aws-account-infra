@@ -1,0 +1,109 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Billing alarms for the account
+
+Parameters:
+  Alarm1Threshold:
+    Description: Threshold for the first alarm
+    Type: Number
+    Default: 10
+
+  Alarm2Threshold:
+    Description: Threshold for the second alarm
+    Type: Number
+    Default: 20
+
+  Alarm3Threshold:
+    Description: Threshold for the third alarm
+    Type: Number
+    Default: 40
+
+  Alarm4Threshold:
+    Description: Threshold for the fourth alarm
+    Type: Number
+    Default: 100
+
+  Contact:
+    Description: The email to send the billing alerts to
+    Type: String
+    Default: sjakthol@outlook.com # You might want to change this
+
+Resources:
+  AlarmTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub '${AWS::StackName}-BillingAlarmTopic'
+
+  AlarmSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Protocol: email
+      Endpoint: !Ref Contact
+      TopicArn: !Ref AlarmTopic
+
+  Alarm1:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmActions:
+        - !Ref AlarmTopic
+      AlarmDescription: !Sub 'Alarm if montly bill is more than $${Alarm1Threshold} (first alarm)'
+      AlarmName: !Sub '${AWS::StackName}-BillingAlarm1'
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - { Name: Currency, Value: USD }
+      EvaluationPeriods: 1
+      MetricName: EstimatedCharges
+      Namespace: AWS/Billing
+      Period: 21600 # 6 hours
+      Statistic: Maximum
+      Threshold: !Ref Alarm1Threshold
+
+  Alarm2:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmActions:
+        - !Ref AlarmTopic
+      AlarmDescription: !Sub 'Alarm if montly bill is more than $${Alarm2Threshold} (second alarm)'
+      AlarmName: !Sub '${AWS::StackName}-BillingAlarm2'
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - { Name: Currency, Value: USD }
+      EvaluationPeriods: 1
+      MetricName: EstimatedCharges
+      Namespace: AWS/Billing
+      Period: 21600 # 6 hours
+      Statistic: Maximum
+      Threshold: !Ref Alarm2Threshold
+
+  Alarm3:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmActions:
+        - !Ref AlarmTopic
+      AlarmDescription: !Sub 'Alarm if montly bill is more than $${Alarm3Threshold} (third alarm)'
+      AlarmName: !Sub '${AWS::StackName}-BillingAlarm3'
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - { Name: Currency, Value: USD }
+      EvaluationPeriods: 1
+      MetricName: EstimatedCharges
+      Namespace: AWS/Billing
+      Period: 21600 # 6 hours
+      Statistic: Maximum
+      Threshold: !Ref Alarm3Threshold
+
+  Alarm4:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmActions:
+        - !Ref AlarmTopic
+      AlarmDescription: !Sub 'Alarm if montly bill is more than $${Alarm4Threshold} (fourth alarm)'
+      AlarmName: !Sub '${AWS::StackName}-BillingAlarm4'
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - { Name: Currency, Value: USD }
+      EvaluationPeriods: 1
+      MetricName: EstimatedCharges
+      Namespace: AWS/Billing
+      Period: 21600 # 6 hours
+      Statistic: Maximum
+      Threshold: !Ref Alarm4Threshold

@@ -1,6 +1,7 @@
 # Mapping from long region names to shorter ones that is to be
 # used in the stack names
 AWS_eu-west-1_PREFIX = ew1
+AWS_us-east-1_PREFIX = ue1
 
 # Some defaults
 AWS ?= aws
