@@ -8,6 +8,8 @@ setup that contains the following components:
 * IAM roles, policies, groups and users
 * VPC with route tables that provide varying level of access to / from the
   public internet
+* Billing alarms that send email when the estimated charges go over a pre-defined
+  limit
 * CloudTrail audit logging to S3
 
 ## Managing Stacks
@@ -24,6 +26,13 @@ make create-infra-iam-base
 make update-infra-iam-base AWS_PROFILE=admin
 make validate-infra-iam-base
 ```
+
+You can use the following variables to influence the commands that get executed:
+
+* `AWS_PROFILE` - a profile for the AWS CLI `--profile` flag (default: `default`)
+* `AWS_REGION` - the region to deploy the stack to (default: `eu-west-1`)
+* `TAGS` - set tags to be passed to the `--tags` flag of `aws cloudformation {create,update}-stack`
+  command (default: `Key=Deployment,Value=${REGION}-account-infra`)
 
 ## Setup Details
 
@@ -72,6 +81,20 @@ included in the setup are:
   to the internet
 * `public` - a route table that provides full bidirectional IPv4 and IPv6
   connectivity to the internet
+
+### Billing Alarms
+The billing alarms stack creates an SNS topic, subscribes your email address to
+it and creates four alarms with increasing thresholds for the monthly estimated
+charges. The default thresholds are:
+
+* First Alarm: $10
+* Second Alarm: $20
+* Third Alarm: $40
+* Fourth Alarm: $100
+
+**Note**: You need to enable the `Receive Billing Alerts` feature from the Billing
+Preferences of your account for the alarms to be functional. Also, the stack **must**
+be deployed to the us-east-1 region as the metrics are only available there.
 
 ### CloudTrail
 The CloudTrail setup included in this repository is pretty simple. The
