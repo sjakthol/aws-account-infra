@@ -11,6 +11,7 @@ setup that contains the following components:
 * Billing alarms that send email when the estimated charges go over a pre-defined
   limit
 * CloudTrail audit logging to S3
+* KMS key for encrypting secrets
 
 ## Managing Stacks
 The Makefile included in this repository contains the following targets
@@ -100,3 +101,11 @@ be deployed to the us-east-1 region as the metrics are only available there.
 The CloudTrail setup included in this repository is pretty simple. The
 CloudFormation stack includes an S3 bucket for the CloudTrail logs and
 a global trail that logs to that bucket.
+
+### KMS
+The KMS stack will create a KMS key that can be used to encrypt secrets
+for different purposes. The KMS key policy allows everyone to manage
+the key which means that access to the key is fully controlled by IAM
+policies of the users and roles on the account.
+
+The stack also contains an alias that makes it easier to use that key.
