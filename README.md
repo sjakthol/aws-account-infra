@@ -63,7 +63,10 @@ has the required permissions to perform the required task. This ensures
 that users cannot accidentally modify resources but need to explicitly
 assume a role in order to perform potentially destructive actions. The
 `admin-users` group is an example of a group that allows its members
-to assume the `account-admin` role for performing administrative tasks.
+to assume the `account-admin` role for performing administrative tasks
+(full access to account). Another example is the `power-users` group
+that allows users to use specific AWS services through the
+`power-user-access` role.
 
 It is advisable to create additional administrative groups and roles with
 less privileges for users who only need to be able to perform specific

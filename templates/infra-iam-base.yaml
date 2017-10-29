@@ -42,6 +42,44 @@ Resources:
               Bool:
                 aws:MultiFactorAuthPresent: true
 
+  PowerUserAccess:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          -
+            Effect: Allow
+            Principal:
+              AWS: !Ref 'AWS::AccountId'
+            Action: sts:AssumeRole
+            Condition:
+              Bool:
+                aws:MultiFactorAuthPresent: true
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/ReadOnlyAccess'
+        - !Ref PowerUserAccessPolicy
+      Path: /
+      RoleName: power-user-access
+
+  ElevateToPowerUserAccess:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: A policy that allows one to elevate to the power-user-access role
+      ManagedPolicyName: elevate-to-power-user-access
+      Path: /
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          -
+            Sid: AllowToAssumePowerUserAccessRole
+            Effect: Allow
+            Action: sts:AssumeRole
+            Resource: !GetAtt PowerUserAccess.Arn
+            Condition:
+              Bool:
+                aws:MultiFactorAuthPresent: true
+
   ## Policies ##
 
   ManagePersonalIAMSettingsPolicy:
@@ -184,6 +222,21 @@ Resources:
               - 'aws-portal:ViewPaymentMethods'
             Resource: '*'
 
+  PowerUserAccessPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: Provides power-user-access to the account
+      ManagedPolicyName: power-user-access
+      Path: /
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: PlaceholderForFutureAccess
+            Effect: Allow
+            Action:
+              - 's3:GetObject'
+            Resource: '*'
+
   ## Groups ##
   AllUsers:
     Type: AWS::IAM::Group
@@ -220,6 +273,14 @@ Resources:
         - !Ref ViewBillingPolicy
       Path: /
 
+  PowerUsers:
+    Type: AWS::IAM::Group
+    Properties:
+      GroupName: power-users
+      ManagedPolicyArns:
+        - !Ref ElevateToPowerUserAccess
+      Path: /
+
 Outputs:
   AccountAdminRole:
     Description: The ARN of the role that has full access to the account
@@ -243,7 +304,7 @@ Outputs:
 
   ReadOnlyUsersGroup:
     Description: The ARN for the read-only-users group
-    Value: !Ref AllUsers
+    Value: !Ref ReadOnlyUsers
 
   AdminUsersGroup:
     Description: The ARN for the admin-users group

@@ -18,6 +18,7 @@ Resources:
         - admin-users
         - all-users
         - read-only-users
+        - power-users
       LoginProfile:
         Password: !Ref InitialPasswordSjakthol
         PasswordResetRequired: true
