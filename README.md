@@ -105,6 +105,11 @@ The CloudTrail setup included in this repository is pretty simple. The
 CloudFormation stack includes an S3 bucket for the CloudTrail logs and
 a global trail that logs to that bucket.
 
+### GuardDuty
+Amazon GuardDuty is a service that analyzes CloudTrail and VPC flow / DNS
+logs for signs of malicious activity. The GuardDuty template sets up
+GuardDuty and configures email notifications for GuardDuty findings.
+
 ### KMS
 The KMS stack will create a KMS key that can be used to encrypt secrets
 for different purposes. The KMS key policy allows everyone to manage
