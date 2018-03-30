@@ -9,6 +9,7 @@ AWS_ca-central-1_PREFIX = cc1
 AWS_eu-central-1_PREFIX = ec1
 AWS_eu-west-1_PREFIX = ew1
 AWS_eu-west-2_PREFIX = ew2
+AWS_eu-west-3_PREFIX = ew3
 AWS_sa-east-1_PREFIX = se1
 AWS_us-east-1_PREFIX = ue1
 AWS_us-east-2_PREFIX = ue2
@@ -46,6 +47,10 @@ update-$(basename $(notdir $(1))): $(1)
 		--tags $(TAGS) \
 		--template-body file://$(1) \
 		--capabilities CAPABILITY_NAMED_IAM
+
+delete-$(basename $(notdir $(1))): $(1)
+	$(AWS_CMD) cloudformation delete-stack \
+		--stack-name $(STACK_REGION_PREFIX)-$(basename $(notdir $(1)))
 
 endef
 

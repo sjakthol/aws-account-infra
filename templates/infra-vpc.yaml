@@ -126,27 +126,41 @@ Outputs:
   VpcId:
     Description: The ID of the VPC
     Value: !Ref Vpc
+    Export:
+      Name: infra-vpc-VpcId
 
   VpcIpv4Cidr:
     Description: The IPv4 CIDR for the VPC
     Value: !GetAtt Vpc.CidrBlock
+    Export:
+      Name: infra-vpc-VpcIpv4Cidr
 
   VpcIpv6Cidr:
     Description: The IPv6 CIDR for the VPC
     Value: !Select [0, !GetAtt Vpc.Ipv6CidrBlocks]
+    Export:
+      Name: infra-vpc-VpcIpv6Cidr
 
   PrivateRouteTable:
     Description: The ID of the private route table of the VPC
     Value: !Ref PrivateRouteTable
+    Export:
+      Name: infra-vpc-PrivateRouteTable
 
   PrivateWithEndpointsRouteTable:
     Description: The ID of the private-with-vpc-endpoints route table of the VPC
     Value: !Ref PrivateWithEndpointsRouteTable
+    Export:
+      Name: infra-vpc-PrivateWithEndpointsRouteTable
 
   PrivateWithIPv6RouteTable:
     Description: The ID of the private-with-ivp6 route table of the VPC
     Value: !Ref PrivateWithIPv6RouteTable
+    Export:
+      Name: infra-vpc-PrivateWithIPv6RouteTable
 
   PublicRouteTable:
     Description: The ID of the public route table (IPv4 & IPv6) of the VPC
     Value: !Ref PublicRouteTable
+    Export:
+      Name: infra-vpc-PublicRouteTable

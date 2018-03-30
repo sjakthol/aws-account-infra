@@ -1,0 +1,69 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Subnets for infra VPC
+
+Parameters:
+  AdhocACidr:
+    Description: The CIDR for the adhoc subnet in the first AZ
+    Type: String
+    Default: '10.0.1.0/24'
+    AllowedPattern : "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})"
+    ConstraintDescription : 'must be a valid CIDR range of the form x.x.x.x/x.'
+
+  AdhocBCidr:
+    Description: The CIDR for the adhoc subnet in the second AZ
+    Type: String
+    Default: '10.0.2.0/24'
+    AllowedPattern : "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})"
+    ConstraintDescription : 'must be a valid CIDR range of the form x.x.x.x/x.'
+
+
+
+Resources:
+  AdhocA:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      AvailabilityZone: !Sub ${AWS::Region}a
+      CidrBlock: !Ref AdhocACidr
+      MapPublicIpOnLaunch: True
+      Tags:
+        - { Key: Name, Value: !Sub '${AWS::StackName}-adhoc-a' }
+      VpcId:
+        Fn::ImportValue: infra-vpc-VpcId
+
+  AdhocART:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      RouteTableId:
+        Fn::ImportValue: infra-vpc-PublicRouteTable
+      SubnetId: !Ref AdhocA
+
+  AdhocB:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      AvailabilityZone: !Sub ${AWS::Region}b
+      CidrBlock: !Ref AdhocBCidr
+      MapPublicIpOnLaunch: True
+      Tags:
+        - { Key: Name, Value: !Sub '${AWS::StackName}-adhoc-b' }
+      VpcId:
+        Fn::ImportValue: infra-vpc-VpcId
+  AdhocBRT:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      RouteTableId:
+        Fn::ImportValue: infra-vpc-PublicRouteTable
+      SubnetId: !Ref AdhocB
+
+Outputs:
+  AdhocA:
+    Description: ID of the adhoc subnet in first AZ
+    Value: !Ref AdhocA
+    Export:
+      Name: infra-vpc-sn-adhoc-a
+
+  AdhocB:
+    Description: ID of the adhoc subnet in second AZ
+    Value: !Ref AdhocB
+    Export:
+      Name: infra-vpc-sn-adhoc-b
+

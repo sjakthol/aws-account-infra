@@ -86,6 +86,10 @@ included in the setup are:
 * `public` - a route table that provides full bidirectional IPv4 and IPv6
   connectivity to the internet
 
+### Networks
+The network stack contains two public subnets (in different AZs) for ad-hoc EC2
+instances.
+
 ### Billing Alarms
 The billing alarms stack creates an SNS topic, subscribes your email address to
 it and creates four alarms with increasing thresholds for the monthly estimated
