@@ -121,3 +121,7 @@ the key which means that access to the key is fully controlled by IAM
 policies of the users and roles on the account.
 
 The stack also contains an alias that makes it easier to use that key.
+
+### Buckets
+The buckets stack contains infra-level buckets such as a bucket for build
+artifacts.

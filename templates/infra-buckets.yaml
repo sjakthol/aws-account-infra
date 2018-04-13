@@ -1,0 +1,15 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Infra level S3 buckets for this account
+
+Resources:
+  BuildResourcesBucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: !Sub '${AWS::AccountId}-${AWS::Region}-build-resources'
+
+Outputs:
+  BuildResourcesBucket:
+    Description: 'The name of the build resources bucket for this account'
+    Value: !Ref BuildResourcesBucket
+    Export:
+      Name: 'infra-buckets-BuildResourcesBucket'
