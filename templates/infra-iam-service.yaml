@@ -1,0 +1,52 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: IAM Roles for AWS Services
+
+Resources:
+
+  SageMakerDefaultExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          -
+            Effect: Allow
+            Principal:
+              Service: sagemaker.amazonaws.com
+            Action: sts:AssumeRole
+      Path: /
+      RoleName: !Sub ${AWS::StackName}-SageMakerDefaultExecutionRole
+      Policies:
+      - PolicyName: SageMakerExecutionRoleAccess
+        PolicyDocument:
+          Version: 2012-10-17
+          Statement:
+          - Sid: GlobalAPIAccess
+            Effect: Allow
+            Action:
+            # - sagemaker:*
+            - ecr:GetAuthorizationToken
+            - cloudwatch:PutMetricData
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:DescribeLogStreams
+            - logs:PutLogEvents
+            - logs:GetLogEvents
+            Resource: '*'
+          - Sid: S3BucketLevelAccess
+            Effect: Allow
+            Action:
+            - s3:ListBucket
+            Resource: arn:aws:s3:::*sagemaker*
+          - Sid: S3ObjectLevelAccess
+            Effect: Allow
+            Action:
+            - s3:GetObject
+            - s3:PutObject
+            - s3:DeleteObject
+            Resource: arn:aws:s3:::*sagemaker*/*
+
+Outputs:
+  SageMakerDefaultExecutionRole:
+    Description: The ARN of the SageMaker notebook instance execution role
+    Value: !GetAtt SageMakerDefaultExecutionRole.Arn
