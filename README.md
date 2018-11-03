@@ -124,4 +124,4 @@ The stack also contains an alias that makes it easier to use that key.
 
 ### Buckets
 The buckets stack contains infra-level buckets such as a bucket for build
-artifacts.
+artifacts and storing account-wide logs.
