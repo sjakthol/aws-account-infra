@@ -21,6 +21,7 @@ Resources:
                 aws:MultiFactorAuthPresent: true
       ManagedPolicyArns:
         - 'arn:aws:iam::aws:policy/AdministratorAccess'
+      MaxSessionDuration: 14400
       Path: /
       RoleName: account-admin
 
@@ -59,6 +60,7 @@ Resources:
       ManagedPolicyArns:
         - 'arn:aws:iam::aws:policy/ReadOnlyAccess'
         - !Ref PowerUserAccessPolicy
+      MaxSessionDuration: 14400
       Path: /
       RoleName: power-user-access
 
