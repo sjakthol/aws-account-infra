@@ -19,12 +19,6 @@ Resources:
       Tags:
         - { Key: Name, Value: !Sub '${AWS::StackName}-vpc' }
 
-  VpcIpv6Cidr:
-    Type: AWS::EC2::VPCCidrBlock
-    Properties:
-      AmazonProvidedIpv6CidrBlock: true
-      VpcId: !Ref Vpc
-
   VpcDhcpOptions:
     Type: AWS::EC2::DHCPOptions
     Properties:
@@ -68,9 +62,24 @@ Resources:
             Action: '*'
             Resource: 'arn:aws:s3:::*'
       RouteTableIds:
-        - !Ref PrivateWithIPv6RouteTable
         - !Ref PrivateWithEndpointsRouteTable
       ServiceName: !Sub 'com.amazonaws.${AWS::Region}.s3'
+      VpcId: !Ref Vpc
+
+  DynamoEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          -
+            Effect: Allow
+            Principal: '*'
+            Action: '*'
+            Resource: 'arn:aws:dynamodb:::*'
+      RouteTableIds:
+        - !Ref PrivateWithEndpointsRouteTable
+      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.dynamodb'
       VpcId: !Ref Vpc
 
   PrivateRouteTable:
@@ -87,20 +96,6 @@ Resources:
       Tags:
         - { Key: Name, Value: !Sub '${AWS::StackName}-rt-private-with-endpoints' }
 
-  PrivateWithIPv6RouteTable:
-    Type: AWS::EC2::RouteTable
-    Properties:
-      VpcId: !Ref Vpc
-      Tags:
-        - { Key: Name, Value: !Sub '${AWS::StackName}-rt-private-with-ipv6' }
-
-  PrivateWithIPv6RouteTableRouteToInternet:
-    Type: AWS::EC2::Route
-    Properties:
-      DestinationIpv6CidrBlock: '::/0'
-      EgressOnlyInternetGatewayId: !Ref EgressOnlyIgw
-      RouteTableId: !Ref PrivateWithIPv6RouteTable
-
   PublicRouteTable:
     Type: AWS::EC2::RouteTable
     Properties:
@@ -112,13 +107,6 @@ Resources:
     Type: AWS::EC2::Route
     Properties:
       DestinationCidrBlock: '0.0.0.0/0'
-      GatewayId: !Ref VpcIgw
-      RouteTableId: !Ref PublicRouteTable
-
-  PublicRouteTableRouteToIPv6Internet:
-    Type: AWS::EC2::Route
-    Properties:
-      DestinationIpv6CidrBlock: '::/0'
       GatewayId: !Ref VpcIgw
       RouteTableId: !Ref PublicRouteTable
 
@@ -135,12 +123,6 @@ Outputs:
     Export:
       Name: infra-vpc-VpcIpv4Cidr
 
-  VpcIpv6Cidr:
-    Description: The IPv6 CIDR for the VPC
-    Value: !Select [0, !GetAtt Vpc.Ipv6CidrBlocks]
-    Export:
-      Name: infra-vpc-VpcIpv6Cidr
-
   PrivateRouteTable:
     Description: The ID of the private route table of the VPC
     Value: !Ref PrivateRouteTable
@@ -153,14 +135,8 @@ Outputs:
     Export:
       Name: infra-vpc-PrivateWithEndpointsRouteTable
 
-  PrivateWithIPv6RouteTable:
-    Description: The ID of the private-with-ivp6 route table of the VPC
-    Value: !Ref PrivateWithIPv6RouteTable
-    Export:
-      Name: infra-vpc-PrivateWithIPv6RouteTable
-
   PublicRouteTable:
-    Description: The ID of the public route table (IPv4 & IPv6) of the VPC
+    Description: The ID of the public route table of the VPC
     Value: !Ref PublicRouteTable
     Export:
       Name: infra-vpc-PublicRouteTable

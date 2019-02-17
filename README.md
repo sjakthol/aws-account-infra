@@ -73,18 +73,16 @@ less privileges for users who only need to be able to perform specific
 administrative tasks.
 
 ### VPC
-The VPC included in the setup provides both IPv4 and IPv6 connectivity. The
+The VPC included in the setup provides IPv4 connectivity only. The
 key part of the template are the different route tables that provide different
 levels of connectivity to any subnets that use those tables. The route tables
 included in the setup are:
-* `private` - a route table for fully private networks that provides both
-  IPv4 and IPv6 connectivity to hosts in the VPC
-* `private-with-endpoints` - a route table that also includes S3 access through
-  a VPC endpoint
-* `private-with-ipv6` - a route table that provides egress-only IPv6 connectivity
+* `private` - a route table for fully private networks that provides IPv4
+  connectivity to hosts in the VPC
+* `private-with-endpoints` - a route table that also includes S3 and DynamoDB
+  access through a VPC endpoint
+* `public` - a route table that provides full bidirectional connectivity
   to the internet
-* `public` - a route table that provides full bidirectional IPv4 and IPv6
-  connectivity to the internet
 
 ### Networks
 The network stack contains two public and two private subnets.
