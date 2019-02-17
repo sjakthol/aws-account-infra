@@ -87,8 +87,7 @@ included in the setup are:
   connectivity to the internet
 
 ### Networks
-The network stack contains two public subnets (in different AZs) for ad-hoc EC2
-instances.
+The network stack contains two public and two private subnets.
 
 ### Billing Alarms
 The billing alarms stack creates an SNS topic, subscribes your email address to

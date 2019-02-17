@@ -2,68 +2,128 @@ AWSTemplateFormatVersion: 2010-09-09
 Description: Subnets for infra VPC
 
 Parameters:
-  AdhocACidr:
-    Description: The CIDR for the adhoc subnet in the first AZ
+  PublicACidr:
+    Description: The CIDR for the public subnet in the first AZ
     Type: String
     Default: '10.0.1.0/24'
     AllowedPattern : "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})"
     ConstraintDescription : 'must be a valid CIDR range of the form x.x.x.x/x.'
 
-  AdhocBCidr:
-    Description: The CIDR for the adhoc subnet in the second AZ
+  PublicBCidr:
+    Description: The CIDR for the public subnet in the second AZ
     Type: String
     Default: '10.0.2.0/24'
     AllowedPattern : "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})"
     ConstraintDescription : 'must be a valid CIDR range of the form x.x.x.x/x.'
 
+  PrivateACidr:
+    Description: The CIDR for the private subnet in the first AZ
+    Type: String
+    Default: '10.0.3.0/24'
+    AllowedPattern : "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})"
+    ConstraintDescription : 'must be a valid CIDR range of the form x.x.x.x/x.'
 
+  PrivateBCidr:
+    Description: The CIDR for the private subnet in the first AZ
+    Type: String
+    Default: '10.0.4.0/24'
+    AllowedPattern : "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})"
+    ConstraintDescription : 'must be a valid CIDR range of the form x.x.x.x/x.'
 
 Resources:
-  AdhocA:
+  ## Public subnets ##
+  PublicA:
     Type: "AWS::EC2::Subnet"
     Properties:
       AvailabilityZone: !Sub ${AWS::Region}a
-      CidrBlock: !Ref AdhocACidr
+      CidrBlock: !Ref PublicACidr
       MapPublicIpOnLaunch: True
       Tags:
-        - { Key: Name, Value: !Sub '${AWS::StackName}-adhoc-a' }
+        - { Key: Name, Value: !Sub '${AWS::StackName}-public-a' }
       VpcId:
         Fn::ImportValue: infra-vpc-VpcId
 
-  AdhocART:
+  PublicART:
     Type: "AWS::EC2::SubnetRouteTableAssociation"
     Properties:
       RouteTableId:
         Fn::ImportValue: infra-vpc-PublicRouteTable
-      SubnetId: !Ref AdhocA
+      SubnetId: !Ref PublicA
 
-  AdhocB:
+  PublicB:
     Type: "AWS::EC2::Subnet"
     Properties:
       AvailabilityZone: !Sub ${AWS::Region}b
-      CidrBlock: !Ref AdhocBCidr
+      CidrBlock: !Ref PublicBCidr
       MapPublicIpOnLaunch: True
       Tags:
-        - { Key: Name, Value: !Sub '${AWS::StackName}-adhoc-b' }
+        - { Key: Name, Value: !Sub '${AWS::StackName}-public-b' }
       VpcId:
         Fn::ImportValue: infra-vpc-VpcId
-  AdhocBRT:
+  PublicBRT:
     Type: "AWS::EC2::SubnetRouteTableAssociation"
     Properties:
       RouteTableId:
         Fn::ImportValue: infra-vpc-PublicRouteTable
-      SubnetId: !Ref AdhocB
+      SubnetId: !Ref PublicB
+
+  ## Private Subnets ##
+  PrivateA:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      AvailabilityZone: !Sub ${AWS::Region}a
+      CidrBlock: !Ref PrivateACidr
+      MapPublicIpOnLaunch: False
+      Tags:
+        - { Key: Name, Value: !Sub '${AWS::StackName}-private-a' }
+      VpcId:
+        Fn::ImportValue: infra-vpc-VpcId
+
+  PrivateART:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      RouteTableId:
+        Fn::ImportValue: infra-vpc-PrivateRouteTable
+      SubnetId: !Ref PrivateA
+
+  PrivateB:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      AvailabilityZone: !Sub ${AWS::Region}b
+      CidrBlock: !Ref PrivateBCidr
+      MapPublicIpOnLaunch: True
+      Tags:
+        - { Key: Name, Value: !Sub '${AWS::StackName}-private-b' }
+      VpcId:
+        Fn::ImportValue: infra-vpc-VpcId
+  PrivateBRT:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      RouteTableId:
+        Fn::ImportValue: infra-vpc-PrivateRouteTable
+      SubnetId: !Ref PrivateB
 
 Outputs:
-  AdhocA:
-    Description: ID of the adhoc subnet in first AZ
-    Value: !Ref AdhocA
+  PublicA:
+    Description: ID of the public subnet in first AZ
+    Value: !Ref PublicA
     Export:
-      Name: infra-vpc-sn-adhoc-a
+      Name: infra-vpc-sn-public-a
 
-  AdhocB:
-    Description: ID of the adhoc subnet in second AZ
-    Value: !Ref AdhocB
+  PublicB:
+    Description: ID of the public subnet in second AZ
+    Value: !Ref PublicB
     Export:
-      Name: infra-vpc-sn-adhoc-b
+      Name: infra-vpc-sn-public-b
 
+  PrivateA:
+    Description: ID of the private subnet in first AZ
+    Value: !Ref PrivateA
+    Export:
+      Name: infra-vpc-sn-private-a
+
+  PrivateB:
+    Description: ID of the private subnet in second AZ
+    Value: !Ref PrivateB
+    Export:
+      Name: infra-vpc-sn-private-b
