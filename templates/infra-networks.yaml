@@ -30,6 +30,20 @@ Parameters:
     AllowedPattern : "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})"
     ConstraintDescription : 'must be a valid CIDR range of the form x.x.x.x/x.'
 
+  NatACidr:
+    Description: The CIDR for the Nat subnet in the first AZ
+    Type: String
+    Default: '10.0.5.0/24'
+    AllowedPattern : "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})"
+    ConstraintDescription : 'must be a valid CIDR range of the form x.x.x.x/x.'
+
+  NatBCidr:
+    Description: The CIDR for the Nat subnet in the first AZ
+    Type: String
+    Default: '10.0.6.0/24'
+    AllowedPattern : "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})"
+    ConstraintDescription : 'must be a valid CIDR range of the form x.x.x.x/x.'
+
 Resources:
   ## Public subnets ##
   PublicA:
@@ -103,6 +117,42 @@ Resources:
         Fn::ImportValue: infra-vpc-PrivateRouteTable
       SubnetId: !Ref PrivateB
 
+  ## Nat Subnets ##
+  NatA:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      AvailabilityZone: !Sub ${AWS::Region}a
+      CidrBlock: !Ref NatACidr
+      MapPublicIpOnLaunch: False
+      Tags:
+        - { Key: Name, Value: !Sub '${AWS::StackName}-nat-a' }
+      VpcId:
+        Fn::ImportValue: infra-vpc-VpcId
+
+  NatART:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      RouteTableId:
+        Fn::ImportValue: infra-vpc-NatARouteTable
+      SubnetId: !Ref NatA
+
+  NatB:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      AvailabilityZone: !Sub ${AWS::Region}b
+      CidrBlock: !Ref NatBCidr
+      MapPublicIpOnLaunch: True
+      Tags:
+        - { Key: Name, Value: !Sub '${AWS::StackName}-nat-b' }
+      VpcId:
+        Fn::ImportValue: infra-vpc-VpcId
+  NatBRT:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      RouteTableId:
+        Fn::ImportValue: infra-vpc-NatBRouteTable
+      SubnetId: !Ref NatB
+
 Outputs:
   PublicA:
     Description: ID of the public subnet in first AZ
@@ -127,3 +177,15 @@ Outputs:
     Value: !Ref PrivateB
     Export:
       Name: infra-vpc-sn-private-b
+
+  NatA:
+    Description: ID of the NAT subnet in first AZ
+    Value: !Ref NatA
+    Export:
+      Name: infra-vpc-sn-nat-a
+
+  NatB:
+    Description: ID of the NAT subnet in second AZ
+    Value: !Ref NatB
+    Export:
+      Name: infra-vpc-sn-nat-b

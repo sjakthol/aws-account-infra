@@ -17,23 +17,22 @@ setup that contains the following components:
 The Makefile included in this repository contains the following targets
 for each template in this repository:
 
-* `create-${STACK}` - creates a stack from the given template
-* `update-${STACK}` - updates a stack from the given template
-* `validate-${STACK}` - validates the given stack template
+* `deploy-${STACK}` - creates or updates a stack from the given template
+* `delete-${STACK}` - deletes the given stack
 
 Examples:
 ```
-make create-infra-iam-base
-make update-infra-iam-base AWS_PROFILE=admin
-make validate-infra-iam-base
+make deploy-infra-iam-base
+make deploy-infra-iam-base AWS_PROFILE=admin
+make delete-infra-iam-base
 ```
 
 You can use the following variables to influence the commands that get executed:
 
 * `AWS_PROFILE` - a profile for the AWS CLI `--profile` flag (default: `default`)
 * `AWS_REGION` - the region to deploy the stack to (default: `eu-west-1`)
-* `TAGS` - set tags to be passed to the `--tags` flag of `aws cloudformation {create,update}-stack`
-  command (default: `Key=Deployment,Value=${REGION}-account-infra`)
+* `TAGS` - set tags to be passed to the `--tags` flag of `aws cloudformation deploy`
+  command (default: `Deployment=${REGION}-account-infra`)
 
 ## Setup Details
 
@@ -77,15 +76,45 @@ The VPC included in the setup provides IPv4 connectivity only. The
 key part of the template are the different route tables that provide different
 levels of connectivity to any subnets that use those tables. The route tables
 included in the setup are:
-* `private` - a route table for fully private networks that provides IPv4
-  connectivity to hosts in the VPC
-* `private-with-endpoints` - a route table that also includes S3 and DynamoDB
-  access through a VPC endpoint
-* `public` - a route table that provides full bidirectional connectivity
-  to the internet
+* `private` - A route table for fully private networks that provides IPv4
+  connectivity to hosts in the VPC.
+* `private-with-endpoints` - A route table that also includes S3 and DynamoDB
+  access through a VPC endpoint.
+* `nat-a` and `nat-b` - A route table with a route to the internet via a
+  NAT Gateway (requires NAT stack).
+* `public` - A route table that provides full bidirectional connectivity
+  to the internet.
+
+### NAT
+The NAT template deploys a NAT Gateway(s) to the VPC. The stack can be deployed
+in two modes:
+
+* If `HighlyAvailable` is set to true, the stack creates two NAT Gateways
+  in two AZs (AZ-A and AZ-B) and attach these to the corresponding route table
+  (`nat-a` and `nat-b`). This setup can handle an availability zone failure
+  but costs a bit more due to two running to NAT Gateways.
+
+* If `HighlyAvailable` is set to false, the stack creates one NAT Gateway to
+  AZ-A of the region. This gateway is attached to both `nat-a` and `nat-b`
+  route tables. This setup is less expensive but it cannot handle a failure
+  of the availability zone that hosts the NAT Gateway. Additionally, traffic
+  from instances using subnets in AZ-B will incur additional charges for cross-AZ traffic.
+
+The template deploys the highly available setup by default.
 
 ### Networks
-The network stack contains two public and two private subnets.
+The network stack contains two public, two NAT and two private subnets.
+
+| Name | CIDR | Route Table | Import Name | Details |
+|------|------|-------------|-------------|---------|
+| Public A | 10.0.1.0/24 | public | `infra-vpc-sn-public-a` | Public subnet with direct route to and from internet in AZ-A |
+| Public B | 10.0.2.0/24 | public | `infra-vpc-sn-public-b` | Public subnet with direct route to and from internet in AZ-B |
+| Private A | 10.0.3.0/24 | private | `infra-vpc-sn-private-a` | Private subnet with access to VPC resources only in AZ-A. |
+| Private B | 10.0.4.0/24 | private | `infra-vpc-sn-private-b` | Private subnet with access to VPC resources only in AZ-B. |
+| NAT A | 10.0.5.0/24 | nat-a | `infra-vpc-sn-nat-a` | Subnet in AZ-A with access to internet through a NAT Gateway. |
+| NAT B | 10.0.6.0/24 | nat-b | `infra-vpc-sn-nat-b` | Subnet in AZ-B with access to internet through a NAT Gateway. |
+
+Other stacks can refer to the subnets with `Fn::ImportValue: <Import Name>` syntax.
 
 ### Billing Alarms
 The billing alarms stack creates an SNS topic, subscribes your email address to

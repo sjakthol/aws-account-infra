@@ -45,11 +45,6 @@ Resources:
       VpcId: !Ref Vpc
       InternetGatewayId: !Ref VpcIgw
 
-  EgressOnlyIgw:
-    Type: AWS::EC2::EgressOnlyInternetGateway
-    Properties:
-      VpcId: !Ref Vpc
-
   S3Endpoint:
     Type: AWS::EC2::VPCEndpoint
     Properties:
@@ -63,6 +58,8 @@ Resources:
             Resource: 'arn:aws:s3:::*'
       RouteTableIds:
         - !Ref PrivateWithEndpointsRouteTable
+        - !Ref NatARouteTable
+        - !Ref NatBRouteTable
       ServiceName: !Sub 'com.amazonaws.${AWS::Region}.s3'
       VpcId: !Ref Vpc
 
@@ -79,6 +76,8 @@ Resources:
             Resource: 'arn:aws:dynamodb:::*'
       RouteTableIds:
         - !Ref PrivateWithEndpointsRouteTable
+        - !Ref NatARouteTable
+        - !Ref NatBRouteTable
       ServiceName: !Sub 'com.amazonaws.${AWS::Region}.dynamodb'
       VpcId: !Ref Vpc
 
@@ -95,6 +94,20 @@ Resources:
       VpcId: !Ref Vpc
       Tags:
         - { Key: Name, Value: !Sub '${AWS::StackName}-rt-private-with-endpoints' }
+
+  NatARouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref Vpc
+      Tags:
+        - { Key: Name, Value: !Sub '${AWS::StackName}-rt-nat-a' }
+
+  NatBRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref Vpc
+      Tags:
+        - { Key: Name, Value: !Sub '${AWS::StackName}-rt-nat-b' }
 
   PublicRouteTable:
     Type: AWS::EC2::RouteTable
@@ -134,6 +147,18 @@ Outputs:
     Value: !Ref PrivateWithEndpointsRouteTable
     Export:
       Name: infra-vpc-PrivateWithEndpointsRouteTable
+
+  NatARouteTable:
+    Description: The ID of the NAT route table of the VPC for AZ-A
+    Value: !Ref NatARouteTable
+    Export:
+      Name: infra-vpc-NatARouteTable
+
+  NatBRouteTable:
+    Description: The ID of the NAT route table of the VPC for AZ-B
+    Value: !Ref NatBRouteTable
+    Export:
+      Name: infra-vpc-NatBRouteTable
 
   PublicRouteTable:
     Description: The ID of the public route table of the VPC
