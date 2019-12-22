@@ -51,7 +51,7 @@ Resources:
           MarketType: spot
           SpotOptions:
             SpotInstanceType: one-time
-        InstanceType: r5.large
+        InstanceType: m5.large
         KeyName: sjakthol
         SecurityGroupIds:
           - !Ref SecurityGroup
