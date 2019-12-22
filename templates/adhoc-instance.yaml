@@ -2,32 +2,17 @@ AWSTemplateFormatVersion: 2010-09-09
 Description: An instance for ad-hoc work
 
 Parameters:
-  SSHKeyName:
-    Description: Name of an existing EC2 SSH key to give the instance
-    Type: AWS::EC2::KeyPair::KeyName
-    Default: sjakthol
-
-  SSHInboundCidr:
-    Description: The CIDR from which SSH access should be allowed from
-    Type: String
-    Default: '0.0.0.0/0'
-    AllowedPattern : "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})"
-    ConstraintDescription : 'must be a valid CIDR range of the form x.x.x.x/x.'
-
-Mappings:
-  RegionMap:
-    eu-west-1:
-      AmiId: ami-0bdb1d6c15a40392c
+  LatestAmiId:
+    Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
+    Default: '/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2'
 
 Resources:
   SecurityGroup:
     Type: "AWS::EC2::SecurityGroup"
     Properties:
-      GroupDescription: Allow SSH access to host
+      GroupDescription: !Sub Security group for ${AWS::StackName}
       GroupName: !Sub ${AWS::StackName}-sg
       VpcId: !ImportValue infra-vpc-VpcId
-      SecurityGroupIngress:
-        - { IpProtocol: tcp, FromPort: 22, ToPort: 22, CidrIp: !Ref SSHInboundCidr, Description: "SSH Access" }
       Tags:
         - { Key: Name, Value: !Sub '${AWS::StackName}-sg' }
 
@@ -37,23 +22,14 @@ Resources:
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
-          -
-            Effect: Allow
+          - Effect: Allow
             Principal:
               Service: ec2.amazonaws.com
             Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
       Path: /
       RoleName: !Sub ${AWS::StackName}-role
-      Policies:
-      - PolicyName: Ec2InstanceRole
-        PolicyDocument:
-          Version: 2012-10-17
-          Statement:
-          - Sid: PlaceholderPolicy
-            Effect: Allow
-            Action:
-              - ec2:DescribeInsances
-            Resource: '*'
 
   RoleProfile:
     Type: AWS::IAM::InstanceProfile
@@ -68,6 +44,17 @@ Resources:
     Properties:
       LaunchTemplateName: !Sub ${AWS::StackName}-template
       LaunchTemplateData:
+        IamInstanceProfile:
+          Arn: !GetAtt RoleProfile.Arn
+        ImageId: !Ref LatestAmiId
+        InstanceMarketOptions:
+          MarketType: spot
+          SpotOptions:
+            SpotInstanceType: one-time
+        InstanceType: r5.large
+        KeyName: sjakthol
+        SecurityGroupIds:
+          - !Ref SecurityGroup
         TagSpecifications:
           - ResourceType: instance
             Tags:
@@ -75,18 +62,12 @@ Resources:
           - ResourceType: volume
             Tags:
               - { Key: Name, Value: !Sub '${AWS::StackName}-volume' }
-        IamInstanceProfile:
-          Arn: !GetAtt RoleProfile.Arn
-        SecurityGroupIds:
-          - !Ref SecurityGroup
-        EbsOptimized: true
-        KeyName: !Ref SSHKeyName
-        InstanceMarketOptions:
-          MarketType: spot
-          SpotOptions:
-            SpotInstanceType: one-time
-        ImageId: !FindInMap [RegionMap, !Ref 'AWS::Region', AmiId]
-        InstanceType: m5.large
+        UserData:
+          Fn::Base64: |
+            #!/bin/bash
+            set -o xtrace
+            yum install -y amazon-ssm-agent
+            systemctl start amazon-ssm-agent
 
   Instance:
     Type: "AWS::EC2::Instance"
