@@ -1,0 +1,14 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Resources:
+  Environment:
+    Type: AWS::Cloud9::EnvironmentEC2
+    Properties:
+      AutomaticStopTimeMinutes: 5
+      InstanceType: t3.medium
+      Name: !Sub ${AWS::StackName}
+      SubnetId: !ImportValue infra-vpc-sn-public-a
+
+Outputs:
+  Environment:
+    Description: URL to the environment
+    Value: !Sub 'https://${AWS::Region}.console.aws.amazon.com/cloud9/ide/${Environment}'
