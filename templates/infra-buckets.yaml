@@ -5,14 +5,35 @@ Resources:
   BuildResourcesBucket:
     Type: 'AWS::S3::Bucket'
     Properties:
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
       BucketName: !Sub '${AWS::AccountId}-${AWS::Region}-build-resources'
+      LifecycleConfiguration:
+        Rules:
+          - Status: Enabled
+            AbortIncompleteMultipartUpload:
+              DaysAfterInitiation: 7
       Tags:
         - { Key: Name, Value: !Sub '${AWS::AccountId}-${AWS::Region}-build-resources' }
 
   LogBucket:
     Type: 'AWS::S3::Bucket'
     Properties:
+      AccessControl: LogDeliveryWrite
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
       BucketName: !Sub '${AWS::AccountId}-${AWS::Region}-logs'
+      LifecycleConfiguration:
+        Rules:
+          - Status: Enabled
+            AbortIncompleteMultipartUpload:
+              DaysAfterInitiation: 7
+          - Status: Enabled
+            ExpirationInDays: 30
       Tags:
         - { Key: Name, Value: !Sub '${AWS::AccountId}-${AWS::Region}-logs' }
 
