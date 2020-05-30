@@ -3,6 +3,35 @@ Description: IAM Roles for AWS Services
 
 Resources:
 
+  ApiGatewayLoggingRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: apigateway.amazonaws.com
+            Action: sts:AssumeRole
+      Path: /
+      RoleName: !Sub ${AWS::StackName}-ApiGatewayLoggingRole
+      Policies:
+      - PolicyName: CloudWatchLogsAccess
+        PolicyDocument:
+          Version: 2012-10-17
+          Statement:
+          - Sid: GlobalAPIAccess
+            Effect: Allow
+            Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:DescribeLogGroups
+            - logs:DescribeLogStreams
+            - logs:PutLogEvents
+            - logs:GetLogEvents
+            - logs:FilterLogEvents
+            Resource: '*'
+
   SageMakerDefaultExecutionRole:
     Type: AWS::IAM::Role
     Properties:
@@ -47,6 +76,10 @@ Resources:
             Resource: arn:aws:s3:::*sagemaker*/*
 
 Outputs:
+  ApiGatewayLoggingRole:
+    Description: The ARN of the API Gateway logging role
+    Value: !GetAtt ApiGatewayLoggingRole.Arn
+
   SageMakerDefaultExecutionRole:
     Description: The ARN of the SageMaker notebook instance execution role
     Value: !GetAtt SageMakerDefaultExecutionRole.Arn
