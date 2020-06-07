@@ -21,6 +21,7 @@ Resources:
                 aws:MultiFactorAuthPresent: true
       ManagedPolicyArns:
         - 'arn:aws:iam::aws:policy/AdministratorAccess'
+        - !Ref ViewBillingPolicy # To deny some account-wide configuration changes
       MaxSessionDuration: 14400
       Path: /
       RoleName: account-admin
@@ -216,12 +217,19 @@ Resources:
           - Sid: AllowToViewBillingInformation
             Effect: Allow
             Action:
-              - 'aws-portal:View*'
+              - aws-portal:View*
+              - ce:Describe*
+              - ce:Get*
+              - ce:List*
+              - cur:DescribeReportDefinitions
             Resource: '*'
-          - Sid: DenyAccessToPaymentMethods
+          - Sid: LimitAccessToRootOnlyAPIs
             Effect: Deny
             Action:
-              - 'aws-portal:ViewPaymentMethods'
+              - aws-portal:ViewPaymentMethods
+              - aws-portal:ModifyAccount
+              - aws-portal:ModifyBilling
+              - aws-portal:ModifyPaymentMethods
             Resource: '*'
 
   PowerUserAccessPolicy:
