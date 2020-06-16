@@ -113,6 +113,8 @@ The network stack contains two public, two NAT and two private subnets.
 | Private B | 10.0.4.0/24 | private | `infra-vpc-sn-private-b` | Private subnet with access to VPC resources only in AZ-B. |
 | NAT A | 10.0.5.0/24 | nat-a | `infra-vpc-sn-nat-a` | Subnet in AZ-A with access to internet through a NAT Gateway. |
 | NAT B | 10.0.6.0/24 | nat-b | `infra-vpc-sn-nat-b` | Subnet in AZ-B with access to internet through a NAT Gateway. |
+| Private With Endpoints A | 10.0.7.0/24 | private | `infra-vpc-sn-private-with-endpoints-a` | Private subnet with access to VPC resources + VPC endpoints in AZ-A. |
+| Private With Endpoints B | 10.0.8.0/24 | private | `infra-vpc-sn-private-with-endpoints-b` | Private subnet with access to VPC resources + VPC endpoints in AZ-B. |
 
 Other stacks can refer to the subnets with `Fn::ImportValue: <Import Name>` syntax.
 
