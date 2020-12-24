@@ -11,6 +11,7 @@ setup that contains the following components:
   limit
 * CloudTrail audit logging to S3
 * KMS key for encrypting secrets
+* Permission sets for AWS SSO
 
 ## Managing Stacks
 The Makefile included in this repository contains the following targets
@@ -34,6 +35,21 @@ You can use the following variables to influence the commands that get executed:
   command (default: `Deployment=${REGION}-account-infra`)
 
 ## Setup Details
+
+### AWS SSO
+
+AWS SSO has the following pre-requisites:
+
+* You have enabled AWS Organizations
+* You have enabled AWS SSO
+
+Once enabled, you can use `infra-sso` template to deploy two permission sets to AWS SSO:
+
+* ReadOnlyAccess - read only access to accounts the set is assigned to
+* AdministratorAccess - full admin access to accounts the set is assigned to
+
+Once created, you must provision and assign permission sets to AWS accounts
+manually. Please see the AWS SSO documentation for details.
 
 ### VPC
 The VPC included in the setup provides IPv4 connectivity only. The

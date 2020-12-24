@@ -28,21 +28,22 @@ STACK_REGION_PREFIX := $(AWS_$(AWS_REGION)_PREFIX)
 
 TAGS ?= Deployment=$(STACK_REGION_PREFIX)-account-infra
 
-define stack_template =
-
-
-deploy-$(basename $(notdir $(1))): $(1)
+# Generic deployment and teardown targets
+deploy-%:
 	$(AWS_CMD) cloudformation deploy \
-		--stack-name $(STACK_REGION_PREFIX)-$(basename $(notdir $(1))) \
+		--stack-name $(STACK_REGION_PREFIX)-$* \
 		--tags $(TAGS) \
-		--template-file $(1) \
-		--capabilities CAPABILITY_NAMED_IAM
+		--template-file templates/$*.yaml \
+		--capabilities CAPABILITY_NAMED_IAM \
+		$(EXTRA_ARGS)
 
-delete-$(basename $(notdir $(1))): $(1)
+delete-%:
 	$(AWS_CMD) cloudformation delete-stack \
-		--stack-name $(STACK_REGION_PREFIX)-$(basename $(notdir $(1)))
+		--stack-name $(STACK_REGION_PREFIX)-$*
 
+# Per-stack overrides
+deploy-infra-sso: EXTRA_ARGS = --parameter-overrides InstanceArn=$(shell $(AWS_CMD) sso-admin list-instances --query 'Instances[0].InstanceArn' --output text)
 
-endef
-
-$(foreach template, $(wildcard templates/*.yaml), $(eval $(call stack_template,$(template))))
+# Concrete deploy and delete targets for autocompletion
+$(addprefix deploy-,$(basename $(notdir $(wildcard templates/*.yaml)))):
+$(addprefix delete-,$(basename $(notdir $(wildcard templates/*.yaml)))):

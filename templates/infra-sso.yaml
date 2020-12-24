@@ -1,0 +1,34 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: AWS SSO setup for an organization
+
+Parameters:
+  InstanceArn:
+    Type: String
+
+Resources:
+
+  ## Permission Sets ##
+
+  ReadOnlyAccess:
+    Type: AWS::SSO::PermissionSet
+    Properties:
+      Description: Provides read-only access to AWS account
+      Name: ReadOnlyAccess
+      InstanceArn: !Ref InstanceArn
+      ManagedPolicies:
+        - arn:aws:iam::aws:policy/ReadOnlyAccess
+      SessionDuration: PT8H
+      Tags:
+        - { Key: Name, Value: ReadOnlyAccess }
+
+  AdministratorAccess:
+    Type: AWS::SSO::PermissionSet
+    Properties:
+      Description: Provides full access to AWS account
+      Name: AdministratorAccess
+      InstanceArn: !Ref InstanceArn
+      ManagedPolicies:
+        - arn:aws:iam::aws:policy/AdministratorAccess
+      SessionDuration: PT1H
+      Tags:
+        - { Key: Name, Value: AdministratorAccess }
