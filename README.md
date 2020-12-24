@@ -5,7 +5,6 @@ Infrastructure setup for an AWS account backed by AWS CloudFormation.
 This repository contains CloudFormation templates for an AWS infrastructure
 setup that contains the following components:
 
-* IAM roles, policies, groups and users
 * VPC with route tables that provide varying level of access to / from the
   public internet
 * Billing alarms that send email when the estimated charges go over a pre-defined
@@ -35,41 +34,6 @@ You can use the following variables to influence the commands that get executed:
   command (default: `Deployment=${REGION}-account-infra`)
 
 ## Setup Details
-
-### IAM
-The key features of the IAM setup are:
-* MFA is required for all operations
-* Users need to assume roles with higher privileges to modify resources and
-  these roles can have varying levels of access to the account
-
-#### IAM Group Structure
-There are three different type of groups for IAM users.
-
-All users should be added to the `all-users` group which provides them with
-the basic access to manage their own IAM preferences and enforces the usage
-of MFA across all AWS API operations.
-
-The second set of groups provides different levels of read-only access to
-AWS services for IAM users. The policies attached to these groups should
-give the users direct access to the set of read-only API calls different
-users require. The `read-only-users` group provides all members of the
-group read-only access to all AWS services.
-
-The third set of groups provides users means to modify AWS resources. The
-policies attached to these groups should not provide IAM users direct
-access to the APIs but they should allow users to assume a role which
-has the required permissions to perform the required task. This ensures
-that users cannot accidentally modify resources but need to explicitly
-assume a role in order to perform potentially destructive actions. The
-`admin-users` group is an example of a group that allows its members
-to assume the `account-admin` role for performing administrative tasks
-(full access to account). Another example is the `power-users` group
-that allows users to use specific AWS services through the
-`power-user-access` role.
-
-It is advisable to create additional administrative groups and roles with
-less privileges for users who only need to be able to perform specific
-administrative tasks.
 
 ### VPC
 The VPC included in the setup provides IPv4 connectivity only. The
