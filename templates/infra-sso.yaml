@@ -29,6 +29,6 @@ Resources:
       InstanceArn: !Ref InstanceArn
       ManagedPolicies:
         - arn:aws:iam::aws:policy/AdministratorAccess
-      SessionDuration: PT1H
+      SessionDuration: PT4H
       Tags:
         - { Key: Name, Value: AdministratorAccess }
