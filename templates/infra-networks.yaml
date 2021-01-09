@@ -68,6 +68,7 @@ Resources:
       MapPublicIpOnLaunch: True
       Tags:
         - { Key: Name, Value: !Sub '${AWS::StackName}-public-a' }
+        - { Key: kubernetes.io/role/elb, Value: '1' }
       VpcId:
         Fn::ImportValue: infra-vpc-VpcId
 
@@ -86,6 +87,7 @@ Resources:
       MapPublicIpOnLaunch: True
       Tags:
         - { Key: Name, Value: !Sub '${AWS::StackName}-public-b' }
+        - { Key: kubernetes.io/role/elb, Value: '1' }
       VpcId:
         Fn::ImportValue: infra-vpc-VpcId
   PublicBRT:
@@ -140,6 +142,7 @@ Resources:
       MapPublicIpOnLaunch: False
       Tags:
         - { Key: Name, Value: !Sub '${AWS::StackName}-nat-a' }
+        - { Key: kubernetes.io/role/internal-elb, Value: '1' }
       VpcId:
         Fn::ImportValue: infra-vpc-VpcId
 
@@ -158,6 +161,7 @@ Resources:
       MapPublicIpOnLaunch: True
       Tags:
         - { Key: Name, Value: !Sub '${AWS::StackName}-nat-b' }
+        - { Key: kubernetes.io/role/internal-elb, Value: '1' }
       VpcId:
         Fn::ImportValue: infra-vpc-VpcId
   NatBRT:
