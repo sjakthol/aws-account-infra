@@ -14,6 +14,43 @@ Resources:
     Properties:
       Description: Provides read-only access to AWS account
       Name: ReadOnlyAccess
+      InlinePolicy: |
+        {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "AllowAccessToCostData",
+              "Effect": "Allow",
+              "Action": [
+                "ce:DescribeCostCategoryDefinition",
+                "ce:DescribeNotificationSubscription",
+                "ce:DescribeReport",
+                "ce:GetAnomalies",
+                "ce:GetAnomalyMonitors",
+                "ce:GetAnomalySubscriptions",
+                "ce:GetCostAndUsage",
+                "ce:GetCostAndUsageWithResources",
+                "ce:GetCostCategories",
+                "ce:GetCostForecast",
+                "ce:GetDimensionValues",
+                "ce:GetPreferences",
+                "ce:GetReservationCoverage",
+                "ce:GetReservationPurchaseRecommendation",
+                "ce:GetReservationUtilization",
+                "ce:GetRightsizingRecommendation",
+                "ce:GetSavingsPlansCoverage",
+                "ce:GetSavingsPlansPurchaseRecommendation",
+                "ce:GetSavingsPlansUtilization",
+                "ce:GetSavingsPlansUtilizationDetails",
+                "ce:GetTags",
+                "ce:GetUsageForecast",
+                "ce:ListCostCategoryDefinitions",
+                "cur:DescribeReportDefinitions"
+              ],
+              "Resource": "*"
+            }
+          ]
+        }
       InstanceArn: !Ref InstanceArn
       ManagedPolicies:
         - arn:aws:iam::aws:policy/ReadOnlyAccess
