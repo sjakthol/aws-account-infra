@@ -158,7 +158,7 @@ Resources:
     Properties:
       AvailabilityZone: !Sub ${AWS::Region}b
       CidrBlock: !Ref NatBCidr
-      MapPublicIpOnLaunch: True
+      MapPublicIpOnLaunch: False
       Tags:
         - { Key: Name, Value: !Sub '${AWS::StackName}-nat-b' }
         - { Key: kubernetes.io/role/internal-elb, Value: '1' }
@@ -195,7 +195,7 @@ Resources:
     Properties:
       AvailabilityZone: !Sub ${AWS::Region}b
       CidrBlock: !Ref PrivateWithEndpointsBCidr
-      MapPublicIpOnLaunch: True
+      MapPublicIpOnLaunch: False
       Tags:
         - { Key: Name, Value: !Sub '${AWS::StackName}-private-with-endpoints-b' }
       VpcId:
