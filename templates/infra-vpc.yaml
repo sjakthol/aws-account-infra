@@ -118,6 +118,8 @@ Resources:
 
   PublicRouteTableRouteToIPv4Internet:
     Type: AWS::EC2::Route
+    DependsOn:
+      - VpcIgwAttachment
     Properties:
       DestinationCidrBlock: '0.0.0.0/0'
       GatewayId: !Ref VpcIgw
