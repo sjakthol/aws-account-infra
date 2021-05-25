@@ -8,7 +8,7 @@ Parameters:
     AllowedValues:
       - true
       - false
-    Default: true
+    Default: false
 
   NatACidr:
     Type: String
