@@ -4,7 +4,7 @@ Description: An instance for ad-hoc work
 Parameters:
   LatestAmiId:
     Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
-    Default: '/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2'
+    Default: '/aws/service/cloud9/amis/amazonlinux-2-x86_64'
 
 Resources:
   SecurityGroup:
