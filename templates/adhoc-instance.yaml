@@ -69,6 +69,9 @@ Resources:
             yum install -y amazon-ssm-agent
             systemctl start amazon-ssm-agent
 
+            yum install -y tmux htop
+            python3 -m pip install --upgrade pip
+
   Instance:
     Type: "AWS::EC2::Instance"
     Properties:
