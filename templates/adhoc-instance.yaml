@@ -44,13 +44,14 @@ Resources:
     Properties:
       LaunchTemplateName: !Sub ${AWS::StackName}-template
       LaunchTemplateData:
+        BlockDeviceMappings:
+          - DeviceName: /dev/xvda
+            Ebs:
+              VolumeSize: 100
+              VolumeType: gp3
         IamInstanceProfile:
           Arn: !GetAtt RoleProfile.Arn
         ImageId: !Ref LatestAmiId
-        InstanceMarketOptions:
-          MarketType: spot
-          SpotOptions:
-            SpotInstanceType: one-time
         InstanceType: m5.large
         KeyName: sjakthol
         SecurityGroupIds:
@@ -69,13 +70,37 @@ Resources:
             yum install -y amazon-ssm-agent
             systemctl start amazon-ssm-agent
 
+            # Install some tools
             yum install -y tmux htop
+
+            # Upgrade pip
             python3 -m pip install --upgrade pip
 
+            # Install AWS CLI v2
+            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" \
+              && unzip -q awscliv2.zip \
+              && ./aws/install \
+              && rm -rf ./aws awscliv2.zip
+
   Instance:
-    Type: "AWS::EC2::Instance"
+    Type: AWS::AutoScaling::AutoScalingGroup
     Properties:
-      LaunchTemplate:
-        LaunchTemplateId: !Ref LaunchTemplate
-        Version: !GetAtt LaunchTemplate.LatestVersionNumber
-      SubnetId: !ImportValue infra-vpc-sn-public-a
+      MinSize: '0'
+      MaxSize: '1'
+      DesiredCapacity: '1'
+      MixedInstancesPolicy:
+        InstancesDistribution:
+          OnDemandBaseCapacity: 0 # set to 1 to get on-demand
+          OnDemandPercentageAboveBaseCapacity: 0
+          SpotAllocationStrategy: capacity-optimized
+        LaunchTemplate:
+          LaunchTemplateSpecification:
+            LaunchTemplateId: !Ref LaunchTemplate
+            Version: !GetAtt LaunchTemplate.LatestVersionNumber
+          Overrides:
+            - InstanceType: m5.large
+            - InstanceType: r5.large
+            - InstanceType: c5.large
+      VPCZoneIdentifier:
+        - !ImportValue infra-vpc-sn-public-a
+        - !ImportValue infra-vpc-sn-public-b
