@@ -28,8 +28,24 @@ Resources:
             Action: sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+        - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryPowerUser
       Path: /
       RoleName: !Sub ${AWS::StackName}-role
+      Policies:
+        - PolicyName: ExtraAccess
+          PolicyDocument: {
+              "Version": "2012-10-17",
+              "Statement": [
+                  {
+                      "Sid": "EKSAccess",
+                      "Effect": "Allow",
+                      "Action": [
+                          "eks:DescribeCluster"
+                      ],
+                      "Resource": "*"
+                  }
+              ]
+          }
 
   RoleProfile:
     Type: AWS::IAM::InstanceProfile
@@ -71,7 +87,7 @@ Resources:
             systemctl start amazon-ssm-agent
 
             # Install some tools
-            yum install -y tmux htop
+            yum install -y tmux htop iftop iotop
 
             # Upgrade pip
             python3 -m pip install --upgrade pip
@@ -81,6 +97,17 @@ Resources:
               && unzip -q awscliv2.zip \
               && ./aws/install \
               && rm -rf ./aws awscliv2.zip
+
+            # Install Docker buildx
+            wget https://github.com/docker/buildx/releases/download/v0.6.0/buildx-v0.6.0.linux-amd64
+            chmod a+x buildx-v0.6.0.linux-amd64
+            mkdir -p /usr/local/lib/docker/cli-plugins
+            mv buildx-v0.6.0.linux-amd64 /usr/local/lib/docker/cli-plugins/docker-buildx
+
+            # Install kubectl
+            curl -o kubectl https://amazon-eks.s3-us-west-2.amazonaws.com/1.21.2/2021-07-05/bin/linux/amd64/kubectl
+            chmod +x kubectl
+            mv kubectl /usr/local/bin/
 
   Instance:
     Type: AWS::AutoScaling::AutoScalingGroup
@@ -98,9 +125,9 @@ Resources:
             LaunchTemplateId: !Ref LaunchTemplate
             Version: !GetAtt LaunchTemplate.LatestVersionNumber
           Overrides:
-            - InstanceType: m5.large
-            - InstanceType: r5.large
-            - InstanceType: c5.large
+            - InstanceType: m5.xlarge
+            - InstanceType: r5.xlarge
+            - InstanceType: c5.xlarge
       VPCZoneIdentifier:
         - !ImportValue infra-vpc-sn-public-a
         - !ImportValue infra-vpc-sn-public-b
