@@ -13,6 +13,10 @@ Resources:
         Enabled: true
         RetainStacksOnAccountRemoval: false
       Description: Deploy infra buckets to all member accounts.
+      OperationPreferences:
+        FailureToleranceCount: 12
+        MaxConcurrentCount: 12
+        RegionConcurrencyType: PARALLEL
       PermissionModel: SERVICE_MANAGED
       StackInstancesGroup:
         - DeploymentTargets:
@@ -36,6 +40,10 @@ Resources:
         Enabled: true
         RetainStacksOnAccountRemoval: false
       Description: Deploy infra VPC to all member accounts.
+      OperationPreferences:
+        FailureToleranceCount: 12
+        MaxConcurrentCount: 12
+        RegionConcurrencyType: PARALLEL
       PermissionModel: SERVICE_MANAGED
       StackInstancesGroup:
         - DeploymentTargets:
@@ -60,6 +68,10 @@ Resources:
         Enabled: true
         RetainStacksOnAccountRemoval: false
       Description: Deploy infra networks to all member accounts.
+      OperationPreferences:
+        FailureToleranceCount: 12
+        MaxConcurrentCount: 12
+        RegionConcurrencyType: PARALLEL
       PermissionModel: SERVICE_MANAGED
       StackInstancesGroup:
         - DeploymentTargets:
