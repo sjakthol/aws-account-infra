@@ -128,3 +128,8 @@ The stack also contains an alias that makes it easier to use that key.
 ### Buckets
 The buckets stack contains infra-level buckets such as a bucket for build
 artifacts and storing account-wide logs.
+
+
+### Stack Sets
+The stacksets stack will create CloudFormation stack sets that deploy
+buckets, vpc and subnets to all member accounts.

@@ -45,6 +45,14 @@ delete-%:
 
 # Per-stack overrides
 deploy-infra-sso: EXTRA_ARGS = --parameter-overrides InstanceArn=$(shell $(AWS_CMD) sso-admin list-instances --query 'Instances[0].InstanceArn' --output text)
+deploy-infra-stacksets: EXTRA_ARGS = --parameter-overrides OrganizationalUnit=$(shell $(AWS_CMD) organizations list-roots --query Roots[0].Id --output text)
+deploy-infra-stacksets: upload-templates
+
+BUILD_RESOURCES_BUCKET = $(shell aws cloudformation list-exports --query 'Exports[?Name==`infra-buckets-BuildResourcesBucket`].Value' --output text)
+upload-templates:
+	$(AWS_CMD) s3 cp templates/infra-buckets.yaml s3://$(BUILD_RESOURCES_BUCKET)/stacksets/infra-buckets.yaml
+	$(AWS_CMD) s3 cp templates/infra-vpc.yaml s3://$(BUILD_RESOURCES_BUCKET)/stacksets/infra-vpc.yaml
+	$(AWS_CMD) s3 cp templates/infra-networks.yaml s3://$(BUILD_RESOURCES_BUCKET)/stacksets/infra-networks.yaml
 
 # Concrete deploy and delete targets for autocompletion
 $(addprefix deploy-,$(basename $(notdir $(wildcard templates/*.yaml)))):
