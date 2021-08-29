@@ -38,7 +38,7 @@ Resources:
     Properties:
       AutoDeployment:
         Enabled: true
-        RetainStacksOnAccountRemoval: false
+        RetainStacksOnAccountRemoval: true
       Description: Deploy infra VPC to all member accounts.
       OperationPreferences:
         FailureToleranceCount: 12
