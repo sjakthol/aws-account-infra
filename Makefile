@@ -20,9 +20,8 @@ AWS_us-west-2_PREFIX = uw2
 # Some defaults
 AWS ?= aws
 AWS_REGION ?= eu-west-1
-AWS_PROFILE ?= default
 
-AWS_CMD := $(AWS) --profile $(AWS_PROFILE) --region $(AWS_REGION)
+AWS_CMD := $(AWS) --region $(AWS_REGION)
 
 STACK_REGION_PREFIX := $(AWS_$(AWS_REGION)_PREFIX)
 
@@ -39,6 +38,9 @@ deploy-%:
 
 delete-%:
 	$(AWS_CMD) cloudformation delete-stack \
+		--stack-name $(STACK_REGION_PREFIX)-$*
+
+	$(AWS_CMD) cloudformation wait stack-delete-complete \
 		--stack-name $(STACK_REGION_PREFIX)-$*
 
 # Per-stack overrides
