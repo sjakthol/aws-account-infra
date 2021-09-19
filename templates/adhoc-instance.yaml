@@ -92,6 +92,9 @@ Resources:
             # Upgrade pip
             python3 -m pip install --upgrade pip
 
+            # Install some Python dev tools
+            python3 -m pip install --user --upgrade poetry tox
+
             # Install AWS CLI v2
             curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" \
               && unzip -q awscliv2.zip \
