@@ -65,6 +65,22 @@ included in the setup are:
 * `public` - A route table that provides full bidirectional connectivity
   to the internet.
 
+### Networks
+The network stack contains two public, two NAT and two private subnets.
+
+| Name | CIDR | Route Table | Import Name | Details |
+|------|------|-------------|-------------|---------|
+| Public A | 10.0.1.0/24 | public | `infra-vpc-sn-public-a` | Public subnet with direct route to and from internet in AZ-A |
+| Public B | 10.0.2.0/24 | public | `infra-vpc-sn-public-b` | Public subnet with direct route to and from internet in AZ-B |
+| Private A | 10.0.3.0/24 | private | `infra-vpc-sn-private-a` | Private subnet with access to VPC resources only in AZ-A. |
+| Private B | 10.0.4.0/24 | private | `infra-vpc-sn-private-b` | Private subnet with access to VPC resources only in AZ-B. |
+| NAT A | 10.0.5.0/24 | nat-a | `infra-vpc-sn-nat-a` | Subnet in AZ-A with access to internet through a NAT Gateway. |
+| NAT B | 10.0.6.0/24 | nat-b | `infra-vpc-sn-nat-b` | Subnet in AZ-B with access to internet through a NAT Gateway. |
+| Private With Endpoints A | 10.0.7.0/24 | private | `infra-vpc-sn-private-with-endpoints-a` | Private subnet with access to VPC resources + VPC endpoints in AZ-A. |
+| Private With Endpoints B | 10.0.8.0/24 | private | `infra-vpc-sn-private-with-endpoints-b` | Private subnet with access to VPC resources + VPC endpoints in AZ-B. |
+
+Other stacks can refer to the subnets with `Fn::ImportValue: <Import Name>` syntax.
+
 ### NAT
 The NAT template deploys a NAT Gateway(s) to the VPC. The stack can be deployed
 in two modes:
@@ -81,22 +97,6 @@ in two modes:
   from instances using subnets in AZ-B will incur additional charges for cross-AZ traffic.
 
 The template deploys the highly available setup by default.
-
-### Networks
-The network stack contains two public, two NAT and two private subnets.
-
-| Name | CIDR | Route Table | Import Name | Details |
-|------|------|-------------|-------------|---------|
-| Public A | 10.0.1.0/24 | public | `infra-vpc-sn-public-a` | Public subnet with direct route to and from internet in AZ-A |
-| Public B | 10.0.2.0/24 | public | `infra-vpc-sn-public-b` | Public subnet with direct route to and from internet in AZ-B |
-| Private A | 10.0.3.0/24 | private | `infra-vpc-sn-private-a` | Private subnet with access to VPC resources only in AZ-A. |
-| Private B | 10.0.4.0/24 | private | `infra-vpc-sn-private-b` | Private subnet with access to VPC resources only in AZ-B. |
-| NAT A | 10.0.5.0/24 | nat-a | `infra-vpc-sn-nat-a` | Subnet in AZ-A with access to internet through a NAT Gateway. |
-| NAT B | 10.0.6.0/24 | nat-b | `infra-vpc-sn-nat-b` | Subnet in AZ-B with access to internet through a NAT Gateway. |
-| Private With Endpoints A | 10.0.7.0/24 | private | `infra-vpc-sn-private-with-endpoints-a` | Private subnet with access to VPC resources + VPC endpoints in AZ-A. |
-| Private With Endpoints B | 10.0.8.0/24 | private | `infra-vpc-sn-private-with-endpoints-b` | Private subnet with access to VPC resources + VPC endpoints in AZ-B. |
-
-Other stacks can refer to the subnets with `Fn::ImportValue: <Import Name>` syntax.
 
 ### Billing Alarms
 The billing alarms stack creates an SNS topic, subscribes your email address to

@@ -38,8 +38,8 @@ Resources:
     Properties:
       AutoDeployment:
         Enabled: true
-        RetainStacksOnAccountRemoval: true
-      Description: Deploy infra VPC to all member accounts.
+        RetainStacksOnAccountRemoval: false
+      Description: Deploy VPC and networking infra to all member accounts.
       OperationPreferences:
         FailureToleranceCount: 12
         MaxConcurrentCount: 12
@@ -59,32 +59,3 @@ Resources:
       TemplateURL: !Sub
         - https://${BuildResourcesBucket}.s3.${AWS::Region}.amazonaws.com/stacksets/infra-vpc.yaml
         - BuildResourcesBucket: !ImportValue infra-buckets-BuildResourcesBucket
-
-  InfraNetworks:
-    Type: AWS::CloudFormation::StackSet
-    DependsOn: InfraVpc
-    Properties:
-      AutoDeployment:
-        Enabled: true
-        RetainStacksOnAccountRemoval: false
-      Description: Deploy infra networks to all member accounts.
-      OperationPreferences:
-        FailureToleranceCount: 12
-        MaxConcurrentCount: 12
-        RegionConcurrencyType: PARALLEL
-      PermissionModel: SERVICE_MANAGED
-      StackInstancesGroup:
-        - DeploymentTargets:
-            OrganizationalUnitIds:
-              - !Ref OrganizationalUnit
-          Regions:
-            - eu-west-1
-            - eu-north-1
-      StackSetName: !Sub ${AWS::StackName}-infra-networks
-      Tags:
-        - { Key: Deployment, Value: infra }
-        - { Key: Name, Value: !Sub "${AWS::StackName}-infra-networks" }
-      TemplateURL: !Sub
-        - https://${BuildResourcesBucket}.s3.${AWS::Region}.amazonaws.com/stacksets/infra-networks.yaml
-        - BuildResourcesBucket: !ImportValue infra-buckets-BuildResourcesBucket
-
