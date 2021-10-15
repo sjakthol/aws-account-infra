@@ -28,7 +28,6 @@ Resources:
             Action: sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
-        - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryPowerUser
       Path: /
       RoleName: !Sub ${AWS::StackName}-role
       Policies:
@@ -63,6 +62,7 @@ Resources:
         BlockDeviceMappings:
           - DeviceName: /dev/xvda
             Ebs:
+              Encrypted: true
               VolumeSize: 100
               VolumeType: gp3
         IamInstanceProfile:
@@ -87,7 +87,7 @@ Resources:
             systemctl start amazon-ssm-agent
 
             # Install some tools
-            yum install -y tmux htop iftop iotop
+            yum install -y tmux htop iftop iotop parallel
 
             # Upgrade pip
             python3 -m pip install --upgrade pip
