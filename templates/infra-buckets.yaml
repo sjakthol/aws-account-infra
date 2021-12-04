@@ -3,30 +3,32 @@ Description: Infra level S3 buckets for this account
 
 Resources:
   BuildResourcesBucket:
-    Type: 'AWS::S3::Bucket'
+    Type: AWS::S3::Bucket
     Properties:
       BucketEncryption:
         ServerSideEncryptionConfiguration:
           - ServerSideEncryptionByDefault:
               SSEAlgorithm: AES256
-      BucketName: !Sub '${AWS::AccountId}-${AWS::Region}-build-resources'
+      BucketName: !Sub ${AWS::AccountId}-${AWS::Region}-build-resources
       LifecycleConfiguration:
         Rules:
           - Status: Enabled
             AbortIncompleteMultipartUpload:
               DaysAfterInitiation: 7
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
       Tags:
-        - { Key: Name, Value: !Sub '${AWS::AccountId}-${AWS::Region}-build-resources' }
+        - { Key: Name, Value: !Sub "${AWS::AccountId}-${AWS::Region}-build-resources" }
 
   LogBucket:
-    Type: 'AWS::S3::Bucket'
+    Type: AWS::S3::Bucket
     Properties:
-      AccessControl: LogDeliveryWrite
       BucketEncryption:
         ServerSideEncryptionConfiguration:
           - ServerSideEncryptionByDefault:
               SSEAlgorithm: AES256
-      BucketName: !Sub '${AWS::AccountId}-${AWS::Region}-logs'
+      BucketName: !Sub ${AWS::AccountId}-${AWS::Region}-logs
       LifecycleConfiguration:
         Rules:
           - Status: Enabled
@@ -34,18 +36,54 @@ Resources:
               DaysAfterInitiation: 7
           - Status: Enabled
             ExpirationInDays: 30
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
       Tags:
-        - { Key: Name, Value: !Sub '${AWS::AccountId}-${AWS::Region}-logs' }
+        - { Key: Name, Value: !Sub "${AWS::AccountId}-${AWS::Region}-logs" }
+
+  LogBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref LogBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: S3ServerAccessLogsPolicy
+            Effect: Allow
+            Principal:
+              Service: logging.s3.amazonaws.com
+            Action:
+              - s3:PutObject
+            Resource:
+              - !Sub arn:aws:s3:::${LogBucket}/*
+            Condition:
+              StringEquals:
+                aws:SourceAccount: !Ref AWS::AccountId
+
+          - Sid: AllowRedshiftLogging
+            Effect: Allow
+            Principal:
+              Service: redshift.amazonaws.com
+            Action:
+              - s3:GetBucketAcl
+              - s3:PutObject
+            Resource:
+              - !Sub arn:aws:s3:::${LogBucket}
+              - !Sub arn:aws:s3:::${LogBucket}/redshift/*
+            Condition:
+              StringEquals:
+                aws:SourceAccount: !Ref AWS::AccountId
 
 Outputs:
   BuildResourcesBucket:
-    Description: 'The name of the build resources bucket for this account'
+    Description: The name of the build resources bucket for this account
     Value: !Ref BuildResourcesBucket
     Export:
-      Name: 'infra-buckets-BuildResourcesBucket'
+      Name: infra-buckets-BuildResourcesBucket
 
   LogBucket:
-    Description: 'The name of the log bucket for this account'
+    Description: The name of the log bucket for this account
     Value: !Ref LogBucket
     Export:
-      Name: 'infra-buckets-LogBucket'
+      Name: infra-buckets-LogBucket
