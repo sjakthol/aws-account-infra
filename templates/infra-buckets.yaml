@@ -75,6 +75,21 @@ Resources:
               StringEquals:
                 aws:SourceAccount: !Ref AWS::AccountId
 
+          - Sid: AllowAWSLogDelivery
+            Effect: Allow
+            Principal:
+              Service: delivery.logs.amazonaws.com
+            Action:
+              - s3:GetBucketAcl
+              - s3:ListBucket
+              - s3:PutObject
+            Resource:
+              - !Sub arn:aws:s3:::${LogBucket}
+              - !Sub arn:aws:s3:::${LogBucket}/*
+            Condition:
+              StringEquals:
+                aws:SourceAccount: !Ref AWS::AccountId
+
           - Sid: AllowAlbLogging
             Effect: Allow
             Principal:
