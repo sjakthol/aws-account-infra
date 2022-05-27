@@ -1,0 +1,15 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: SSH keys for EC2
+
+Parameters:
+  PublicKeyMaterialSjakthol:
+    Type: String
+
+Resources:
+  sjakthol:
+    Type: AWS::EC2::KeyPair
+    Properties:
+      KeyName: sjakthol
+      PublicKeyMaterial: !Ref PublicKeyMaterialSjakthol
+      Tags:
+      - { Key: Name, Value: sjakthol }
