@@ -15,6 +15,8 @@ Resources:
         Enabled: true
         RetainStacksOnAccountRemoval: false
       Description: Deploy infra buckets to all member accounts.
+      ManagedExecution:
+        Active: true
       OperationPreferences:
         FailureToleranceCount: 12
         MaxConcurrentCount: 12
@@ -42,6 +44,8 @@ Resources:
         Enabled: true
         RetainStacksOnAccountRemoval: false
       Description: Deploy EC2 SSH keys to all member accounts.
+      ManagedExecution:
+        Active: true
       OperationPreferences:
         FailureToleranceCount: 12
         MaxConcurrentCount: 12
@@ -71,6 +75,8 @@ Resources:
         Enabled: true
         RetainStacksOnAccountRemoval: false
       Description: Deploy VPC and networking infra to all member accounts.
+      ManagedExecution:
+        Active: true
       OperationPreferences:
         FailureToleranceCount: 12
         MaxConcurrentCount: 12
