@@ -1,0 +1,36 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Enable logging for VPC related services
+
+Resources:
+  FlowLogs:
+    Type: AWS::EC2::FlowLog
+    Properties:
+      DestinationOptions:
+        FileFormat: plain-text
+        HiveCompatiblePartitions: false
+        PerHourPartition: false
+      LogDestination: !Sub
+        - arn:aws:s3:::${LogBucket}/vpc/${VpcId}
+        - LogBucket: !ImportValue infra-buckets-LogBucket
+          VpcId: !ImportValue infra-vpc-VpcId
+      LogDestinationType: s3
+      ResourceId: !ImportValue infra-vpc-VpcId
+      ResourceType: VPC
+      Tags:
+        - { Key: Name, Value: !Sub '${AWS::StackName}-flowlog' }
+      TrafficType: ALL
+
+  Route53ResolverLogs:
+    Type: AWS::Route53Resolver::ResolverQueryLoggingConfig
+    Properties:
+      DestinationArn: !Sub
+        - arn:aws:s3:::${LogBucket}/route53resolver/${VpcId}
+        - LogBucket: !ImportValue infra-buckets-LogBucket
+          VpcId: !ImportValue infra-vpc-VpcId
+      Name: !Sub '${AWS::StackName}-dns-querylog'
+
+  Route53ResolverLogsAssociation:
+    Type: AWS::Route53Resolver::ResolverQueryLoggingConfigAssociation
+    Properties:
+      ResolverQueryLogConfigId: !Ref Route53ResolverLogs
+      ResourceId: !ImportValue infra-vpc-VpcId
