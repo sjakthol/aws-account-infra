@@ -34,6 +34,7 @@ deploy-infra-sso: EXTRA_ARGS = --parameter-overrides InstanceArn=$(shell $(AWS_C
 deploy-infra-ec2key: EXTRA_ARGS = --parameter-overrides PublicKeyMaterialSjakthol="$(shell cat ~/.ssh/id_ed25519.pub)"
 
 BUILD_RESOURCES_BUCKET = $(shell aws cloudformation list-exports --query 'Exports[?Name==`infra-buckets-BuildResourcesBucket`].Value' --output text)
+ORG_ID = $(shell $(AWS_CMD) organizations describe-organization --query Organization.Id --output text)
 MEMBERS_OU_ID = $(shell $(AWS_CMD) organizations list-organizational-units-for-parent --parent-id $(ORG_ROOT_ID) --query 'OrganizationalUnits[?Name==`Members`].Id' --output text)
 ORG_ROOT_ID = $(shell $(AWS_CMD) organizations list-roots --query Roots[0].Id --output text)
 deploy-infra-stacksets: EXTRA_ARGS = --parameter-overrides OrganizationalUnit=$(MEMBERS_OU_ID) PublicKeyMaterialSjakthol="$(shell cat ~/.ssh/id_ed25519.pub)"
@@ -42,6 +43,9 @@ upload-templates:
 	$(AWS_CMD) s3 cp templates/infra-buckets.yaml s3://$(BUILD_RESOURCES_BUCKET)/stacksets/infra-buckets.yaml
 	$(AWS_CMD) s3 cp templates/infra-ec2key.yaml s3://$(BUILD_RESOURCES_BUCKET)/stacksets/infra-ec2key.yaml
 	$(AWS_CMD) s3 cp templates/infra-vpc.yaml s3://$(BUILD_RESOURCES_BUCKET)/stacksets/infra-vpc.yaml
+
+
+deploy-infra-log-archive: EXTRA_ARGS = --parameter-overrides OrganizationId=$(ORG_ID)
 
 # Concrete deploy and delete targets for autocompletion
 $(addprefix deploy-,$(basename $(notdir $(wildcard templates/*.yaml)))):

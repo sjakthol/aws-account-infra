@@ -1,0 +1,58 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: S3 bucket for centralized logging in an organization
+
+Parameters:
+  OrganizationId:
+    Type: String
+    Description: AWS Organization ID
+
+Resources:
+  LogArchiveBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      BucketName: !Sub ${OrganizationId}-${AWS::Region}-log-archive
+      LifecycleConfiguration:
+        Rules:
+          - Status: Enabled
+            AbortIncompleteMultipartUpload:
+              DaysAfterInitiation: 7
+            ExpiredObjectDeleteMarker: true
+            NoncurrentVersionExpirationInDays: 14
+          - Status: Enabled
+            ExpirationInDays: 30
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
+      Tags:
+        - { Key: Name, Value: !Sub "${OrganizationId}-${AWS::Region}-log-archive" }
+      VersioningConfiguration:
+        Status: Enabled
+
+  LogArchiveBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref LogArchiveBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: Permissions on objects
+            Effect: Allow
+            Principal:
+              AWS: '*'
+            Action:
+              - s3:ReplicateDelete
+              - s3:ReplicateObject
+            Resource:
+              - !Sub arn:aws:s3:::${LogArchiveBucket}/${!aws:PrincipalAccount}/*
+            Condition:
+              StringEquals:
+                aws:PrincipalOrgID: !Ref OrganizationId
+
+Outputs:
+  LogArchiveBucket:
+    Description: The name of the log achive bucket for this organization
+    Value: !Ref LogArchiveBucket
