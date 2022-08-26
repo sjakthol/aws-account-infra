@@ -12,7 +12,7 @@ Resources:
     Properties:
       GroupDescription: !Sub Security group for ${AWS::StackName}
       GroupName: !Sub ${AWS::StackName}-sg
-      VpcId: !ImportValue infra-vpc-VpcId
+      VpcId: !ImportValue infra-nfw-VpcId
       Tags:
         - { Key: Name, Value: !Sub '${AWS::StackName}-sg' }
 
@@ -132,5 +132,5 @@ Resources:
             - InstanceType: r5.xlarge
             - InstanceType: c5.xlarge
       VPCZoneIdentifier:
-        - !ImportValue infra-vpc-sn-public-a
-        - !ImportValue infra-vpc-sn-public-b
+        - !ImportValue infra-nfw-WorkloadSubnet1
+        - !ImportValue infra-nfw-WorkloadSubnet2

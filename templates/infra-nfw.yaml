@@ -1,0 +1,298 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: AWS Network Firewall for custom VPC
+
+Resources:
+  ## VPC ##
+
+  Vpc:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - { Key: Name, Value: !Sub "${AWS::StackName}-Vpc" }
+
+  VpcDhcpOptions:
+    Type: AWS::EC2::DHCPOptions
+    Properties:
+      # Note: Does not work in us-east-1
+      DomainName: !Sub "${AWS::Region}.compute.internal"
+      DomainNameServers:
+        - AmazonProvidedDNS
+
+  VpcDhcpOptionsAssoc:
+    Type: AWS::EC2::VPCDHCPOptionsAssociation
+    Properties:
+      DhcpOptionsId: !Ref VpcDhcpOptions
+      VpcId: !Ref Vpc
+
+  VpcIgw:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - { Key: Name, Value: !Sub "${AWS::StackName}-VpcIgw" }
+
+  VpcIgwAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId: !Ref VpcIgw
+      VpcId: !Ref Vpc
+
+  VpcIgwRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      Tags:
+        - { Key: Name, Value: !Sub "${AWS::StackName}-VpcIgwRouteTable" }
+      VpcId: !Ref Vpc
+
+  VpcIgwRouteTableAssociation:
+    Type: AWS::EC2::GatewayRouteTableAssociation
+    Properties:
+      GatewayId: !Ref VpcIgw
+      RouteTableId: !Ref VpcIgwRouteTable
+
+  VpcIgwRoute1:
+    Type: AWS::EC2::Route
+    Properties:
+      DestinationCidrBlock: 10.0.254.32/28
+      RouteTableId: !Ref VpcIgwRouteTable
+      VpcEndpointId: !Select [1, !Split [":", !Select [0, !GetAtt Firewall.EndpointIds]]]
+
+  VpcIgwRoute2:
+    Type: AWS::EC2::Route
+    Properties:
+      DestinationCidrBlock: 10.0.254.48/28
+      RouteTableId: !Ref VpcIgwRouteTable
+      VpcEndpointId: !Select [1, !Split [":", !Select [1, !GetAtt Firewall.EndpointIds]]]
+
+  ## Firewall Subnets ##
+
+  FirewallSubnetA:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      AvailabilityZone: !Sub ${AWS::Region}a
+      CidrBlock: 10.0.254.0/28
+      MapPublicIpOnLaunch: False
+      Tags:
+        - { Key: Name, Value: !Sub '${AWS::StackName}-FirewallSubnetA' }
+      VpcId: !Ref Vpc
+
+  FirewallSubnetB:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      AvailabilityZone: !Sub ${AWS::Region}b
+      CidrBlock: 10.0.254.16/28
+      MapPublicIpOnLaunch: False
+      Tags:
+        - { Key: Name, Value: !Sub '${AWS::StackName}-FirewallSubnetB' }
+      VpcId: !Ref Vpc
+
+  FirewallSubnetRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      Tags:
+        - { Key: Name, Value: !Sub "${AWS::StackName}-FirewallSubnetRouteTable" }
+      VpcId: !Ref Vpc
+
+  FirewallSubnetRoute:
+    Type: AWS::EC2::Route
+    DependsOn:
+      - VpcIgwAttachment
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref VpcIgw
+      RouteTableId: !Ref FirewallSubnetRouteTable
+
+  FirewallSubnetRouteTableAssociationA:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref FirewallSubnetRouteTable
+      SubnetId: !Ref FirewallSubnetA
+
+  FirewallSubnetRouteTableAssociationB:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref FirewallSubnetRouteTable
+      SubnetId: !Ref FirewallSubnetB
+
+  ## Workload Subnets ##
+
+  WorkloadSubnet1:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      AvailabilityZone: !Select [0, !Split [":", !Select [0, !GetAtt Firewall.EndpointIds]]]
+      CidrBlock: 10.0.254.32/28
+      MapPublicIpOnLaunch: True
+      Tags:
+        - { Key: Name, Value: !Sub '${AWS::StackName}-WorkloadSubnet1' }
+      VpcId: !Ref Vpc
+
+  WorkloadSubnet2:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      AvailabilityZone: !Select [0, !Split [":", !Select [1, !GetAtt Firewall.EndpointIds]]]
+      CidrBlock: 10.0.254.48/28
+      MapPublicIpOnLaunch: True
+      Tags:
+        - { Key: Name, Value: !Sub '${AWS::StackName}-WorkloadSubnet2' }
+      VpcId: !Ref Vpc
+
+  WorkloadSubnetRouteTable1:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      Tags:
+        - { Key: Name, Value: !Sub "${AWS::StackName}-WorkloadSubnetRouteTable1" }
+      VpcId: !Ref Vpc
+
+  WorkloadSubnetRouteTable2:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      Tags:
+        - { Key: Name, Value: !Sub "${AWS::StackName}-WorkloadSubnetRouteTable2" }
+      VpcId: !Ref Vpc
+
+  WorkloadSubnetRoute1:
+    Type: AWS::EC2::Route
+    DependsOn:
+      - VpcIgwAttachment
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      RouteTableId: !Ref WorkloadSubnetRouteTable1
+      VpcEndpointId: !Select [1, !Split [":", !Select [0, !GetAtt Firewall.EndpointIds]]]
+
+  WorkloadSubnetRoute2:
+    Type: AWS::EC2::Route
+    DependsOn:
+      - VpcIgwAttachment
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      RouteTableId: !Ref WorkloadSubnetRouteTable2
+      VpcEndpointId: !Select [1, !Split [":", !Select [1, !GetAtt Firewall.EndpointIds]]]
+
+  WorkloadSubnetRouteTableAssociationA:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref WorkloadSubnetRouteTable1
+      SubnetId: !Ref WorkloadSubnet1
+
+  WorkloadSubnetRouteTableAssociationB:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref WorkloadSubnetRouteTable2
+      SubnetId: !Ref WorkloadSubnet2
+
+  Firewall:
+    Type: AWS::NetworkFirewall::Firewall
+    Properties:
+      FirewallName: !Sub '${AWS::StackName}-Firewall'
+      FirewallPolicyArn: !Ref FirewallPolicy
+      VpcId: !Ref Vpc
+      SubnetMappings:
+        - SubnetId: !Ref FirewallSubnetA
+        - SubnetId: !Ref FirewallSubnetB
+      Description: Firewall description goes here
+      DeleteProtection: False
+      Tags:
+        - { Key: Name, Value: !Sub '${AWS::StackName}-Firewall' }
+
+  FirewallLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/networkfirewall/${Firewall.FirewallId}
+      RetentionInDays: 30
+      Tags:
+        - { Key: Name, Value: !Sub '/aws/networkfirewall/${Firewall.FirewallId}' }
+
+  FirewallLoggingConfiguration:
+    Type: AWS::NetworkFirewall::LoggingConfiguration
+    Properties:
+      FirewallArn: !Ref Firewall
+      LoggingConfiguration:
+        LogDestinationConfigs:
+          - LogType: ALERT
+            LogDestinationType: CloudWatchLogs
+            LogDestination:
+              logGroup: !Ref FirewallLogGroup
+
+  FirewallPolicy:
+    Type: AWS::NetworkFirewall::FirewallPolicy
+    Properties:
+      FirewallPolicyName: !Sub ${AWS::StackName}-FirewallPolicy
+      FirewallPolicy:
+        StatelessDefaultActions:
+          - 'aws:forward_to_sfe'
+        StatelessFragmentDefaultActions:
+          - 'aws:drop'
+        StatefulRuleGroupReferences:
+          - ResourceArn: !Ref FirewallRuleGroupHostFilter
+          - ResourceArn: !Ref FirewallRuleGroupCustomFilter
+      Description: Default firewall policy
+      Tags:
+        - { Key: Name, Value: !Sub '${AWS::StackName}-FirewallPolicy' }
+
+  FirewallRuleGroupHostFilter:
+    Type: AWS::NetworkFirewall::RuleGroup
+    Properties:
+      Capacity: 100
+      Description: Default rule group for testing
+      RuleGroup:
+        RulesSource:
+          RulesSourceList:
+            GeneratedRulesType: ALLOWLIST
+            Targets:
+              - .amazonaws.com
+              - google.com
+            TargetTypes:
+              - HTTP_HOST
+              - TLS_SNI
+      RuleGroupName: !Sub ${AWS::StackName}-FirewallRuleGroupHostFilter
+      Tags:
+        - { Key: Name, Value: !Sub '${AWS::StackName}-FirewallRuleGroupHostFilter' }
+      Type: STATEFUL
+
+  FirewallRuleGroupCustomFilter:
+    Type: AWS::NetworkFirewall::RuleGroup
+    Properties:
+      Capacity: 100
+      Description: Default rule group for testing
+      RuleGroup:
+        RuleVariables:
+          PortSets:
+            HTTP_PORTS:
+              Definition:
+                - "80"
+                - "8080"
+            HTTPS_PORTS:
+              Definition:
+                - "443"
+                - "8443"
+        RulesSource:
+          RulesString: |
+            drop tcp any any <> any $HTTPS_PORTS (msg:"Non-TLS traffic to TLS port"; flow:to_server,established; app-layer-protocol:!tls; sid:2271003; rev:1;)
+            drop tcp any any <> any $HTTP_PORTS (msg:"Non-HTTP traffic to HTTP port"; flow:to_server,established; app-layer-protocol:!http; sid:2271004; rev:1;)
+#            drop tcp any any <> any [!$HTTP_PORTS,!$HTTPS_PORTS] (msg:"Traffic unsafe port"; flow:to_server,established; sid:2271005; rev:1;)
+      RuleGroupName: !Sub ${AWS::StackName}-FirewallRuleGroupCustomFilter
+      Tags:
+        - { Key: Name, Value: !Sub '${AWS::StackName}-FirewallRuleGroupCustomFilter' }
+      Type: STATEFUL
+
+Outputs:
+
+  VpcId:
+    Description: The ID of the VPC
+    Value: !Ref Vpc
+    Export:
+      Name: infra-nfw-VpcId
+
+  WorkloadSubnet1:
+    Description: ID of the workloads subnet in first AZ
+    Value: !Ref WorkloadSubnet1
+    Export:
+      Name: infra-nfw-WorkloadSubnet1
+
+  WorkloadSubnet2:
+    Description: ID of the workloads subnet in second AZ
+    Value: !Ref WorkloadSubnet2
+    Export:
+      Name: infra-nfw-WorkloadSubnet2
