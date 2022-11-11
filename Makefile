@@ -36,7 +36,8 @@ deploy-infra-ec2key: EXTRA_ARGS = --parameter-overrides PublicKeyMaterialSjaktho
 BUILD_RESOURCES_BUCKET = $(shell aws cloudformation list-exports --query 'Exports[?Name==`infra-buckets-BuildResourcesBucket`].Value' --output text)
 MEMBERS_OU_ID = $(shell $(AWS_CMD) organizations list-organizational-units-for-parent --parent-id $(ORG_ROOT_ID) --query 'OrganizationalUnits[?Name==`Members`].Id' --output text)
 ORG_ROOT_ID = $(shell $(AWS_CMD) organizations list-roots --query Roots[0].Id --output text)
-deploy-infra-stacksets: EXTRA_ARGS = --parameter-overrides OrganizationalUnit=$(MEMBERS_OU_ID) PublicKeyMaterialSjakthol="$(shell cat ~/.ssh/id_ed25519.pub)"
+BACKUP_ACCOUNT_ID = $(shell $(AWS_CMD) organizations list-accounts --query 'Accounts[?Name==`Backups 1`].Id' --output text)
+deploy-infra-stacksets: EXTRA_ARGS = --parameter-overrides OrganizationalUnit=$(MEMBERS_OU_ID) PublicKeyMaterialSjakthol="$(shell cat ~/.ssh/id_ed25519.pub)" BackupAccountId=$(BACKUP_ACCOUNT_ID)
 deploy-infra-stacksets: upload-templates
 upload-templates:
 	$(AWS_CMD) s3 cp templates/infra-buckets.yaml s3://$(BUILD_RESOURCES_BUCKET)/stacksets/infra-buckets.yaml

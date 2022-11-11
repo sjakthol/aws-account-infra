@@ -4,6 +4,8 @@ Description: CloudFormation StackSets to deploy common infra to all accounts.
 Parameters:
   OrganizationalUnit:
     Type: String
+  BackupAccountId:
+    Type: String
   PublicKeyMaterialSjakthol:
     Type: String
 
@@ -55,6 +57,10 @@ Resources:
       PermissionModel: SERVICE_MANAGED
       StackInstancesGroup:
         - DeploymentTargets:
+            Accounts:
+              # Special accounts with minimal infra only
+              - !Ref BackupAccountId
+            AccountFilterType: DIFFERENCE
             OrganizationalUnitIds:
               - !Ref OrganizationalUnit
           Regions:
@@ -84,6 +90,10 @@ Resources:
       PermissionModel: SERVICE_MANAGED
       StackInstancesGroup:
         - DeploymentTargets:
+            Accounts:
+              # Special accounts with minimal infra only
+              - !Ref BackupAccountId
+            AccountFilterType: DIFFERENCE
             OrganizationalUnitIds:
               - !Ref OrganizationalUnit
           Regions:
