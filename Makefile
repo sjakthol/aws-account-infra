@@ -43,6 +43,7 @@ upload-templates:
 	$(AWS_CMD) s3 cp templates/infra-buckets.yaml s3://$(BUILD_RESOURCES_BUCKET)/stacksets/infra-buckets.yaml
 	$(AWS_CMD) s3 cp templates/infra-ec2key.yaml s3://$(BUILD_RESOURCES_BUCKET)/stacksets/infra-ec2key.yaml
 	$(AWS_CMD) s3 cp templates/infra-vpc.yaml s3://$(BUILD_RESOURCES_BUCKET)/stacksets/infra-vpc.yaml
+	$(AWS_CMD) s3 cp templates/CDKToolkit.yaml s3://$(BUILD_RESOURCES_BUCKET)/stacksets/CDKToolkit.yaml
 
 # Concrete deploy and delete targets for autocompletion
 $(addprefix deploy-,$(basename $(notdir $(wildcard templates/*.yaml)))):
