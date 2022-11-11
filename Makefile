@@ -7,9 +7,9 @@ AWS_us-east-1_PREFIX = ue1
 # Some defaults
 AWS ?= aws
 AWS_REGION ?= eu-west-1
-AWS_CMD := $(AWS) --region $(AWS_REGION)
+AWS_CMD = $(AWS) --region $(AWS_REGION)
 
-STACK_REGION_PREFIX := $(AWS_$(AWS_REGION)_PREFIX)
+STACK_REGION_PREFIX = $(AWS_$(AWS_REGION)_PREFIX)
 
 TAGS ?= Deployment=$(STACK_REGION_PREFIX)-account-infra
 
@@ -44,6 +44,12 @@ upload-templates:
 	$(AWS_CMD) s3 cp templates/infra-ec2key.yaml s3://$(BUILD_RESOURCES_BUCKET)/stacksets/infra-ec2key.yaml
 	$(AWS_CMD) s3 cp templates/infra-vpc.yaml s3://$(BUILD_RESOURCES_BUCKET)/stacksets/infra-vpc.yaml
 	$(AWS_CMD) s3 cp templates/CDKToolkit.yaml s3://$(BUILD_RESOURCES_BUCKET)/stacksets/CDKToolkit.yaml
+
+deploy-infra-billing-alarms: AWS_REGION = us-east-1
+
+SUSPENDED_OU_ID = $(shell $(AWS_CMD) organizations list-organizational-units-for-parent --parent-id $(ORG_ROOT_ID) --query 'OrganizationalUnits[?Name==`Suspended`].Id' --output text)
+deploy-infra-org-policies: AWS_REGION = us-east-1
+deploy-infra-org-policies: EXTRA_ARGS = --parameter-overrides BackupAccountId=$(BACKUP_ACCOUNT_ID) SuspendedOu=$(SUSPENDED_OU_ID) MembersOu=$(MEMBERS_OU_ID)
 
 # Concrete deploy and delete targets for autocompletion
 $(addprefix deploy-,$(basename $(notdir $(wildcard templates/*.yaml)))):
