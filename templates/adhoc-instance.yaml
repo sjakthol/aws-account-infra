@@ -1,10 +1,22 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: An instance for ad-hoc work
+Description: Instance for ad-hoc work
 
 Parameters:
-  LatestAmiId:
+  AmiIdx86:
     Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
-    Default: '/aws/service/cloud9/amis/amazonlinux-2-x86_64'
+    Default: '/aws/service/ami-amazon-linux-latest/al2022-ami-kernel-default-x86_64'
+  AmiIdArm:
+    Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
+    Default: '/aws/service/ami-amazon-linux-latest/al2022-ami-kernel-default-arm64'
+  Architecture:
+    Type: String
+    AllowedValues:
+      - arm64
+      - x86_64
+    Default: x86_64
+
+Conditions:
+  IsArm: !Equals [!Ref Architecture, arm64]
 
 Resources:
   SecurityGroup:
@@ -28,6 +40,7 @@ Resources:
             Action: sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+        - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryPowerUser
       Path: /
       RoleName: !Sub ${AWS::StackName}-role
       Policies:
@@ -67,8 +80,8 @@ Resources:
               VolumeType: gp3
         IamInstanceProfile:
           Arn: !GetAtt RoleProfile.Arn
-        ImageId: !Ref LatestAmiId
-        InstanceType: m5.large
+        ImageId: !If [IsArm, !Ref AmiIdArm, !Ref AmiIdx86]
+        InstanceType: !If [IsArm, m6g.xlarge, m6i.xlarge]
         KeyName: sjakthol
         SecurityGroupIds:
           - !Ref SecurityGroup
@@ -80,14 +93,19 @@ Resources:
             Tags:
               - { Key: Name, Value: !Sub '${AWS::StackName}-volume' }
         UserData:
-          Fn::Base64: |
+          Fn::Base64: !Sub
+          - |
             #!/bin/bash
             set -o xtrace
-            yum install -y amazon-ssm-agent
-            systemctl start amazon-ssm-agent
 
             # Install some tools
-            yum install -y tmux htop iftop iotop parallel
+            dnf install -y docker make git patch tmux htop iotop parallel amazon-ecr-credential-helper python3-pip
+
+            # Setup Docker
+            systemctl start docker
+            usermod -aG docker ec2-user
+            sudo -u ec2-user mkdir -p /home/ec2-user/.docker
+            echo '{"credsStore": "ecr-login"}' | sudo -u ec2-user tee /home/ec2-user/.docker/config.json
 
             # Upgrade pip
             python3 -m pip install --upgrade pip
@@ -96,21 +114,22 @@ Resources:
             python3 -m pip install --upgrade poetry tox
 
             # Install AWS CLI v2
-            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" \
+            curl -sSfL --retry 3 "https://awscli.amazonaws.com/awscli-exe-linux-${AwsCliArch}.zip" -o "awscliv2.zip" \
               && unzip -q awscliv2.zip \
               && ./aws/install \
               && rm -rf ./aws awscliv2.zip
 
             # Install Docker buildx
-            wget https://github.com/docker/buildx/releases/download/v0.6.0/buildx-v0.6.0.linux-amd64
-            chmod a+x buildx-v0.6.0.linux-amd64
             mkdir -p /usr/local/lib/docker/cli-plugins
-            mv buildx-v0.6.0.linux-amd64 /usr/local/lib/docker/cli-plugins/docker-buildx
+            curl -sSfL --retry 3 "https://github.com/docker/buildx/releases/download/v0.9.1/buildx-v0.9.1.linux-${GoArch}" -o /usr/local/lib/docker/cli-plugins/docker-buildx
+            chmod a+x /usr/local/lib/docker/cli-plugins/docker-buildx
 
             # Install kubectl
-            curl -o kubectl https://amazon-eks.s3-us-west-2.amazonaws.com/1.21.2/2021-07-05/bin/linux/amd64/kubectl
-            chmod +x kubectl
-            mv kubectl /usr/local/bin/
+            curl -sSfL --retry 3 -o /usr/local/bin/kubectl https://s3.us-west-2.amazonaws.com/amazon-eks/1.24.7/2022-10-31/bin/linux/${GoArch}/kubectl
+            chmod +x /usr/local/bin/kubectl
+
+          - AwsCliArch: !If [IsArm, aarch64, x86_64]
+            GoArch: !If [IsArm, arm64, amd64]
 
   Instance:
     Type: AWS::AutoScaling::AutoScalingGroup
@@ -128,9 +147,9 @@ Resources:
             LaunchTemplateId: !Ref LaunchTemplate
             Version: !GetAtt LaunchTemplate.LatestVersionNumber
           Overrides:
-            - InstanceType: m5.xlarge
-            - InstanceType: r5.xlarge
-            - InstanceType: c5.xlarge
+            - InstanceType: !If [IsArm, m6g.xlarge, m6i.xlarge]
+            - InstanceType: !If [IsArm, r6g.xlarge, r6i.xlarge]
+            - InstanceType: !If [IsArm, c6g.xlarge, c6i.xlarge]
       VPCZoneIdentifier:
         - !ImportValue infra-vpc-sn-public-a
         - !ImportValue infra-vpc-sn-public-b

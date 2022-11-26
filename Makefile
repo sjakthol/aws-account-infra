@@ -51,6 +51,16 @@ SUSPENDED_OU_ID = $(shell $(AWS_CMD) organizations list-organizational-units-for
 deploy-infra-org-policies: AWS_REGION = us-east-1
 deploy-infra-org-policies: EXTRA_ARGS = --parameter-overrides BackupAccountId=$(BACKUP_ACCOUNT_ID) SuspendedOu=$(SUSPENDED_OU_ID) MembersOu=$(MEMBERS_OU_ID)
 
+deploy-adhoc-instance-arm64:
+	$(MAKE) deploy-adhoc-instance STACK_REGION_PREFIX=$(STACK_REGION_PREFIX)-arm64 EXTRA_ARGS="--parameter-overrides Architecture=arm64"
+delete-adhoc-instance-arm64:
+	$(MAKE) delete-adhoc-instance STACK_REGION_PREFIX=$(STACK_REGION_PREFIX)-arm64
+
+deploy-adhoc-instance-x86:
+	$(MAKE) deploy-adhoc-instance STACK_REGION_PREFIX=$(STACK_REGION_PREFIX)-x86 EXTRA_ARGS="--parameter-overrides Architecture=x86_64"
+delete-adhoc-instance-x86:
+	$(MAKE) delete-adhoc-instance STACK_REGION_PREFIX=$(STACK_REGION_PREFIX)-x86
+
 # Concrete deploy and delete targets for autocompletion
 $(addprefix deploy-,$(basename $(notdir $(wildcard templates/*.yaml)))):
 $(addprefix delete-,$(basename $(notdir $(wildcard templates/*.yaml)))):
