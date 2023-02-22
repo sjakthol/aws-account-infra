@@ -119,10 +119,9 @@ Resources:
               "Resource": "*"
             },
             {
-              "Sid": "DenyIamUsers",
+              "Sid": "DenyIamUserAccessKeys",
               "Effect": "Deny",
               "Action": [
-                "iam:CreateUser",
                 "iam:CreateAccessKey"
               ],
               "Resource": "*"
