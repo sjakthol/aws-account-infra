@@ -4,10 +4,10 @@ Description: Instance for ad-hoc work
 Parameters:
   AmiIdx86:
     Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
-    Default: '/aws/service/ami-amazon-linux-latest/al2022-ami-kernel-default-x86_64'
+    Default: '/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64'
   AmiIdArm:
     Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
-    Default: '/aws/service/ami-amazon-linux-latest/al2022-ami-kernel-default-arm64'
+    Default: '/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-arm64'
   Architecture:
     Type: String
     AllowedValues:
