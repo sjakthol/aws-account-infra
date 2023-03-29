@@ -31,6 +31,9 @@ Resources:
           Regions:
             - eu-west-1
             - eu-north-1
+            - us-east-1
+            - us-east-2
+            - us-west-2
       StackSetName: !Sub ${AWS::StackName}-infra-buckets
       Tags:
         - { Key: Deployment, Value: infra }
@@ -68,6 +71,9 @@ Resources:
           Regions:
             - eu-west-1
             - eu-north-1
+            - us-east-1
+            - us-east-2
+            - us-west-2
       StackSetName: !Sub ${AWS::StackName}-CDKToolkit
       Tags:
         - { Key: Deployment, Value: infra }
@@ -103,6 +109,9 @@ Resources:
           Regions:
             - eu-west-1
             - eu-north-1
+            - us-east-1
+            - us-east-2
+            - us-west-2
       StackSetName: !Sub ${AWS::StackName}-infra-ec2key
       Tags:
         - { Key: Deployment, Value: infra }
@@ -136,6 +145,9 @@ Resources:
           Regions:
             - eu-west-1
             - eu-north-1
+            - us-east-1
+            - us-east-2
+            - us-west-2
       StackSetName: !Sub ${AWS::StackName}-infra-vpc
       Tags:
         - { Key: Deployment, Value: infra }
