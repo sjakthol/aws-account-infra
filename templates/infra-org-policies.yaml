@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: 2010-09-09
-# Transform: AWS::LanguageExtensions
+Transform: AWS::LanguageExtensions
 Description: AWS Organizations - Policies and policy attachments
 
 Parameters:
@@ -14,46 +14,23 @@ Resources:
   BackupProtection:
     Type: AWS::Organizations::Policy
     Properties:
-      ## Doesn't work for some reason
-      # Content:
-      #   Fn::ToJsonString:
-      #     Version: "2012-10-17"
-      #     Statement:
-      #       - Sid: Statement1
-      #         Effect: Deny
-      #         NotAction:
-      #           - s3:DeleteObject
-      #           - s3:GetObject
-      #           - s3:GetObjectVersion
-      #           - s3:ListBucket
-      #           - s3:ListBucketVersions
-      #           - s3:PutObject
-      #           - s3:PutObjectAcl
-      #           - s3:ListAllMyBuckets
-      #         Resource: '*'
-      Content: |
-        {
-          "Version": "2012-10-17",
-          "Statement": [
-            {
-              "Sid": "Statement1",
-              "Effect": "Deny",
-              "NotAction": [
-                "s3:DeleteObject",
-                "s3:GetObject",
-                "s3:GetObjectVersion",
-                "s3:ListBucket",
-                "s3:ListBucketVersions",
-                "s3:PutObject",
-                "s3:PutObjectAcl",
-                "s3:ListAllMyBuckets"
-              ],
-              "Resource": [
-                "*"
-              ]
-            }
-          ]
-        }
+      Content:
+        Fn::ToJsonString:
+          Version: "2012-10-17"
+          Statement:
+            - Sid: Statement1
+              Effect: Deny
+              NotAction:
+                - cloudwatch:GetMetricStatistics
+                - cloudwatch:ListMetrics
+                - s3:DeleteObject
+                - s3:Get*
+                - s3:ListBucket
+                - s3:ListBucketVersions
+                - s3:PutObject
+                - s3:PutObjectAcl
+                - s3:List*
+              Resource: '*'
       Description: Blocks all unnecessary access to Backup account to prevent all account principals from permanently destroying backups.
       Name: !Sub ${AWS::StackName}-BackupProtection
       Tags:
@@ -65,18 +42,14 @@ Resources:
   Suspended:
     Type: AWS::Organizations::Policy
     Properties:
-      Content: |
-        {
-          "Version": "2012-10-17",
-          "Statement": [
-            {
-              "Sid": "Statement1",
-              "Effect": "Deny",
-              "Action": "*",
-              "Resource": "*"
-            }
-          ]
-        }
+      Content:
+        Fn::ToJsonString:
+          Version: "2012-10-17"
+          Statement:
+            - Sid: Statement1
+              Effect: Deny
+              Action: '*'
+              Resource: '*'
       Description: SCP for suspended accounts
       Name: !Sub ${AWS::StackName}-Suspended
       Tags:
@@ -88,140 +61,117 @@ Resources:
   DefaultMemberLimits:
     Type: AWS::Organizations::Policy
     Properties:
-      Content: |
-        {
-          "Version": "2012-10-17",
-          "Statement": [
-            {
-              "Sid": "DenyRootUser",
-              "Effect": "Deny",
-              "Action": "*",
-              "Resource": "*",
-              "Condition": {
-                "StringLike": {
-                  "aws:PrincipalArn": "arn:aws:iam::*:root"
-                }
-              }
-            },
-            {
-              "Sid": "DenyAccountSettingsChanges",
-              "Action": [
-                "aws-portal:ModifyAccount",
-                "aws-portal:ModifyBilling",
-                "aws-portal:ModifyPaymentMethods"
-              ],
-              "Resource": "*",
-              "Effect": "Deny"
-            },
-            {
-              "Effect": "Deny",
-              "Action": "organizations:LeaveOrganization",
-              "Resource": "*"
-            },
-            {
-              "Sid": "DenyIamUserAccessKeys",
-              "Effect": "Deny",
-              "Action": [
-                "iam:CreateAccessKey"
-              ],
-              "Resource": "*"
-            },
-            {
-              "Sid": "DenyExpensiveOperations",
-              "Effect": "Deny",
-              "Action": [
-                "acm-pca:CreateCertificateAuthority",
-                "aws-marketplace:AcceptAgreementApprovalRequest",
-                "aws-marketplace:Subscribe",
-                "backup:PutBackupVaultLockConfiguration",
-                "dynamodb:PurchaseReservedCapacityOfferings",
-                "ec2:AcceptReservedInstancesExchangeQuote",
-                "ec2:CancelReservedInstancesListing",
-                "ec2:CreateReservedInstancesListing",
-                "ec2:DeleteQueuedReservedInstances",
-                "ec2:GetReservedInstancesExchangeQuote",
-                "ec2:ModifyReservedInstances",
-                "ec2:PurchaseHostReservation",
-                "ec2:PurchaseReservedInstancesOffering",
-                "ec2:PurchaseScheduledInstances",
-                "elasticache:PurchaseReservedCacheNodesOffering",
-                "es:PurchaseReservedInstanceOffering",
-                "es:PurchaseReservedElasticsearchInstanceOffering",
-                "rds:PurchaseReservedDBInstancesOffering",
-                "redshift:AcceptReservedNodeExchange",
-                "redshift:GetReservedNodeExchangeOfferings",
-                "redshift:PurchaseReservedNodeOffering",
-                "route53domains:RegisterDomain",
-                "route53domains:RenewDomain",
-                "route53domains:TransferDomain",
-                "s3:BypassGovernanceRetention",
-                "s3:PutBucketObjectLockConfiguration",
-                "s3:PutObjectLegalHold",
-                "s3:PutObjectRetention",
-                "savingsplans:CreateSavingsPlan",
-                "shield:CreateSubscription"
-              ],
-              "Resource": "*"
-            },
-            {
-              "Sid": "BlockNonStandardRegions",
-              "NotAction": [
-                "a4b:*",
-                "acm:*",
-                "aws-marketplace-management:*",
-                "aws-marketplace:*",
-                "aws-portal:*",
-                "awsbillingconsole:*",
-                "budgets:*",
-                "ce:*",
-                "chime:*",
-                "cloudfront:*",
-                "config:*",
-                "cur:*",
-                "directconnect:*",
-                "ec2:DescribeRegions",
-                "ec2:DescribeTransitGateways",
-                "ec2:DescribeVpnGateways",
-                "fms:*",
-                "globalaccelerator:*",
-                "health:*",
-                "iam:*",
-                "importexport:*",
-                "kms:*",
-                "mobileanalytics:*",
-                "networkmanager:*",
-                "organizations:*",
-                "pricing:*",
-                "route53:*",
-                "route53domains:*",
-                "s3:GetAccountPublic*",
-                "s3:ListAllMyBuckets",
-                "s3:PutAccountPublic*",
-                "shield:*",
-                "sts:*",
-                "support:*",
-                "trustedadvisor:*",
-                "waf-regional:*",
-                "waf:*",
-                "wafv2:*",
-                "wellarchitected:*"
-              ],
-              "Resource": "*",
-              "Effect": "Deny",
-              "Condition": {
-                "StringNotEquals": {
-                  "aws:RequestedRegion": [
-                    "eu-west-1",
-                    "eu-north-1",
-                    "us-east-1",
-                    "us-west-2",
-                    "us-east-2"
-                  ]
-                }
-              }
-            }
-          ]
-        }
+      Content:
+        Fn::ToJsonString:
+          Version: '2012-10-17'
+          Statement:
+          - Sid: DenyRootUser
+            Effect: Deny
+            Action: "*"
+            Resource: "*"
+            Condition:
+              StringLike:
+                aws:PrincipalArn: arn:aws:iam::*:root
+          - Sid: DenyAccountSettingsChanges
+            Action:
+            - aws-portal:ModifyAccount
+            - aws-portal:ModifyBilling
+            - aws-portal:ModifyPaymentMethods
+            Resource: "*"
+            Effect: Deny
+          - Effect: Deny
+            Action: organizations:LeaveOrganization
+            Resource: "*"
+          - Sid: DenyIamUserAccessKeys
+            Effect: Deny
+            Action:
+            - iam:CreateAccessKey
+            Resource: "*"
+          - Sid: DenyExpensiveOperations
+            Effect: Deny
+            Action:
+            - acm-pca:CreateCertificateAuthority
+            - aws-marketplace:AcceptAgreementApprovalRequest
+            - aws-marketplace:Subscribe
+            - backup:PutBackupVaultLockConfiguration
+            - dynamodb:PurchaseReservedCapacityOfferings
+            - ec2:AcceptReservedInstancesExchangeQuote
+            - ec2:CancelReservedInstancesListing
+            - ec2:CreateReservedInstancesListing
+            - ec2:DeleteQueuedReservedInstances
+            - ec2:GetReservedInstancesExchangeQuote
+            - ec2:ModifyReservedInstances
+            - ec2:PurchaseHostReservation
+            - ec2:PurchaseReservedInstancesOffering
+            - ec2:PurchaseScheduledInstances
+            - elasticache:PurchaseReservedCacheNodesOffering
+            - es:PurchaseReservedInstanceOffering
+            - es:PurchaseReservedElasticsearchInstanceOffering
+            - rds:PurchaseReservedDBInstancesOffering
+            - redshift:AcceptReservedNodeExchange
+            - redshift:GetReservedNodeExchangeOfferings
+            - redshift:PurchaseReservedNodeOffering
+            - route53domains:RegisterDomain
+            - route53domains:RenewDomain
+            - route53domains:TransferDomain
+            - s3:BypassGovernanceRetention
+            - s3:PutBucketObjectLockConfiguration
+            - s3:PutObjectLegalHold
+            - s3:PutObjectRetention
+            - savingsplans:CreateSavingsPlan
+            - shield:CreateSubscription
+            Resource: "*"
+          - Sid: BlockNonStandardRegions
+            NotAction:
+            - a4b:*
+            - acm:*
+            - aws-marketplace-management:*
+            - aws-marketplace:*
+            - aws-portal:*
+            - awsbillingconsole:*
+            - budgets:*
+            - ce:*
+            - chime:*
+            - cloudfront:*
+            - config:*
+            - cur:*
+            - directconnect:*
+            - ec2:DescribeRegions
+            - ec2:DescribeTransitGateways
+            - ec2:DescribeVpnGateways
+            - fms:*
+            - globalaccelerator:*
+            - health:*
+            - iam:*
+            - importexport:*
+            - kms:*
+            - mobileanalytics:*
+            - networkmanager:*
+            - organizations:*
+            - pricing:*
+            - route53:*
+            - route53domains:*
+            - s3:GetAccountPublic*
+            - s3:ListAllMyBuckets
+            - s3:PutAccountPublic*
+            - shield:*
+            - sts:*
+            - support:*
+            - trustedadvisor:*
+            - waf-regional:*
+            - waf:*
+            - wafv2:*
+            - wellarchitected:*
+            Resource: "*"
+            Effect: Deny
+            Condition:
+              StringNotEquals:
+                aws:RequestedRegion:
+                - eu-west-1
+                - eu-north-1
+                - us-east-1
+                - us-west-2
+                - us-east-2
       Description: Default limits for all member accounts
       Name: !Sub ${AWS::StackName}-DefaultMemberLimits
       Tags:
