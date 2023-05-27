@@ -99,7 +99,7 @@ Resources:
             set -o xtrace
 
             # Install some tools
-            dnf install -y docker make git patch tmux htop iotop parallel amazon-ecr-credential-helper python3-pip
+            dnf install -y docker make git patch tmux htop iotop parallel amazon-ecr-credential-helper python3-pip nodejs
 
             # Setup Docker
             systemctl start docker
