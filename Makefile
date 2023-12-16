@@ -30,7 +30,7 @@ delete-%:
 		--stack-name $(STACK_REGION_PREFIX)-$*
 
 # Per-stack overrides
-deploy-infra-sso: EXTRA_ARGS = --parameter-overrides InstanceArn=$(shell $(AWS_CMD) sso-admin list-instances --query 'Instances[0].InstanceArn' --output text)
+deploy-infra-sso: EXTRA_ARGS = --parameter-overrides InstanceArn=$(shell $(AWS_CMD) sso-admin list-instances --query 'Instances[0].InstanceArn' --output text | grep -v None)
 deploy-infra-ec2key: EXTRA_ARGS = --parameter-overrides PublicKeyMaterialSjakthol="$(shell cat ~/.ssh/id_ed25519.pub)"
 
 BUILD_RESOURCES_BUCKET = $(shell aws cloudformation list-exports --query 'Exports[?Name==`infra-buckets-BuildResourcesBucket`].Value' --output text)
