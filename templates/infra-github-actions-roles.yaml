@@ -1,0 +1,44 @@
+
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Template to set up IAM roles for GitHub Actions
+
+Resources:
+  CfnMonitorRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action: sts:AssumeRoleWithWebIdentity
+            Principal:
+              Federated: !ImportValue infra-GitHubActionsOidcProvider
+            Condition:
+              StringEquals:
+                token.actions.githubusercontent.com:aud: sts.amazonaws.com
+                sts:RoleSessionName: actions-cfn-monitor
+              StringLike:
+                token.actions.githubusercontent.com:sub: repo:sjakthol/cfn-monitor:*
+      Description: Role for GitHub Actions automation of sjakthol/cfn-monitor project
+      RoleName: !Sub "${AWS::StackName}-CfnMonitorRole"
+      Policies:
+        - PolicyName: CfnMonitorPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+            - Effect: Allow
+              Action: cloudformation:ListStacks
+              Resource: "*"
+            - Effect: Allow
+              Action:
+                - cloudformation:DescribeStackEvents
+                - cloudformation:DescribeStacks
+                - cloudformation:CreateStack
+                - cloudformation:UpdateStack
+                - cloudformation:DeleteStack
+              Resource: !Sub arn:${AWS::Partition}:cloudformation:*:${AWS::AccountId}:stack/cfn-monitor-*
+
+Outputs:
+  CfnMonitorRoleArn:
+    Description: ARN of the IAM role for GitHub Actions automation of sjakthol/cfn-monitor project
+    Value: !GetAtt CfnMonitorRole.Arn
