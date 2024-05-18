@@ -1,0 +1,23 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Template to set up OIDC Provider for GitHub Actions
+
+Conditions:
+  IsPrimaryRegion: !Equals [ !Ref "AWS::Region", eu-west-1 ]
+
+Resources:
+  GitHubActionsOidcProvider:
+    Condition: IsPrimaryRegion
+    Type: AWS::IAM::OIDCProvider
+    Properties:
+      Url: https://token.actions.githubusercontent.com
+      ClientIdList:
+        - sts.amazonaws.com
+      ThumbprintList:
+        - ffffffffffffffffffffffffffffffffffffffff
+
+Outputs:
+  GitHubActionsOidcProvider:
+    Description: OIDC provider for GitHub Actions
+    Value: !Sub arn:aws:iam::${AWS::AccountId}:oidc-provider/token.actions.githubusercontent.com
+    Export:
+      Name: infra-GitHubActionsOidcProvider
