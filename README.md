@@ -1,57 +1,83 @@
-Infrastructure setup for an AWS account backed by AWS CloudFormation.
+Infrastructure setup for an AWS organization.
 
 ## What is this?
 
-This repository contains CloudFormation templates for an AWS infrastructure
-setup that contains the following components:
+This repository contains CloudFormation templates that defines an AWS infrastructure
+for an AWS organization.
 
-* VPC with route tables that provide varying level of access to / from the
-  public internet
-* Billing alarms that send email when the estimated charges go over a pre-defined
-  limit
-* CloudTrail audit logging to S3
-* KMS key for encrypting secrets
-* Permission sets for AWS SSO
+**Organization Infra**
+
+The following stacks create organization wide configurations. They should be deployed to the organization management
+account or a delegated administrator account for a given feature.
+
+* `infra-org-policies.yaml` - Deploys Service Control Policies for the organization.
+* `infra-sso.yaml` - Deploys AWS IAM Identity Center for the organization.
+* `infra-stacksets.yaml` - Deploys common infra (CDKToolkit, buckets, ec2key, github-actions and vpc stacks) to all accounts and regions via CloudFormation StackSets.
+* `infra-trail.yaml` - Creates a CloudTrail organization trail for the AWS Organization.
+
+**Account Infra**
+
+The following stacks create infra for each AWS account / region. They should be deployed to each account and active region. Some of these stacks are deployed to all accounts and regions with CloudFormation StackSets.
+
+* `adhoc-instance.yaml` - Creates an EC2 instance for ad-hoc development work. Instance is configured with Docker, Node.js and Python.
+* `CDKToolkit.yaml`  - The AWS CDK bootstrap stack.
+* `cloud9-environment` - Creates a Cloud9 environment for ad-hoc development work.
+* `infra-billing-alarms.yaml` - Creates billing alarms that send email alerts if estimated charges go over a pre-defined limit. This can be deployed to the consolidated billing account only or to all accounts separately. This stack is deployed to `us-east-1` region only.
+* `infra-buckets.yaml` - Creates S3 buckets for build artifacts and log storage.
+* `infra-ec2key.yaml` - Deploys an EC2 key pair to be used with EC2 instances.
+* `infra-github-actions-roles.yaml` - Creates IAM roles for GitHub Actions.
+* `infra-github-actions.yaml` - Creates an OIDC provider for GitHub Actions.
+* `infra-kms.yaml` - Creates a generic KMS key.
+* `infra-nat.yaml` - Creates a NAT Gateway for the VPC.
+* `infra-vpc-logs.yaml` - Sets up logging for the VPC (VPC Flow Logs and Route 53 DNS resolver logs)
+* `infra-vpc.yaml`- Creates a VPC with 2 x public, 2 x nat (NAT gateway deployed separately), 2 x isolated and 2 x private subnets.
+
+See below for additional details on the setup.
 
 ## Managing Stacks
 The Makefile included in this repository contains the following targets
-for each template in this repository:
+for each template:
 
 * `deploy-${STACK}` - creates or updates a stack from the given template
 * `delete-${STACK}` - deletes the given stack
 
 Examples:
 ```
-make deploy-infra-iam-base
-make deploy-infra-iam-base AWS_PROFILE=admin
-make delete-infra-iam-base
+make deploy-infra-buckets
+make delete-infra-buckets
 ```
 
 You can use the following variables to influence the commands that get executed:
 
-* `AWS_PROFILE` - a profile for the AWS CLI `--profile` flag (default: `default`)
 * `AWS_REGION` - the region to deploy the stack to (default: `eu-west-1`)
 * `TAGS` - set tags to be passed to the `--tags` flag of `aws cloudformation deploy`
   command (default: `Deployment=${REGION}-account-infra`)
 
 ## Setup Details
 
-### AWS SSO
+Here are some additional de
 
-AWS SSO has the following pre-requisites:
+### AWS IAM Identity Center
+
+AWS IAM Identity Center has the following pre-requisites:
 
 * You have enabled AWS Organizations
-* You have enabled AWS SSO
+* You have enabled AWS IAM Identity Center
 
-Once enabled, you can use `infra-sso` template to deploy two permission sets to AWS SSO:
+Once enabled, you can use `infra-sso` template to deploy two permission sets to AWS IAM Identity Center:
 
 * ReadOnlyAccess - read only access to accounts the set is assigned to
 * AdministratorAccess - full admin access to accounts the set is assigned to
 
+This stack must be deployed to the organization management account or to the
+delegated administrator account for AWS IAM Identity Center and the region
+the Identity Center was created to.
+
 Once created, you must provision and assign permission sets to AWS accounts
-manually. Please see the AWS SSO documentation for details.
+manually. Please see the AWS IAM Identity Center documentation for details.
 
 ### VPC
+
 The VPC included in the setup provides IPv4 connectivity only. The
 key part of the template are the different route tables that provide different
 levels of connectivity to any subnets that use those tables. The route tables
@@ -66,6 +92,7 @@ included in the setup are:
   to the internet.
 
 ### Networks
+
 The network stack contains two public, two NAT and two private subnets.
 
 | Name | CIDR | Route Table | Import Name | Details |
@@ -82,6 +109,7 @@ The network stack contains two public, two NAT and two private subnets.
 Other stacks can refer to the subnets with `Fn::ImportValue: <Import Name>` syntax.
 
 ### NAT
+
 The NAT template deploys a NAT Gateway(s) to the VPC. The stack can be deployed
 in two modes:
 
@@ -99,6 +127,7 @@ in two modes:
 The template deploys the highly available setup by default.
 
 ### Billing Alarms
+
 The billing alarms stack creates an SNS topic, subscribes your email address to
 it and creates four alarms with increasing thresholds for the monthly estimated
 charges. The default thresholds are:
@@ -113,23 +142,43 @@ Preferences of your account for the alarms to be functional. Also, the stack **m
 be deployed to the us-east-1 region as the metrics are only available there.
 
 ### CloudTrail
-The CloudTrail setup included in this repository is pretty simple. The
-CloudFormation stack includes an S3 bucket for the CloudTrail logs and
-a global trail that logs to that bucket.
+
+The CloudTrail setup creates an S3 bucket for the CloudTrail logs and a global, organization
+trail that logs to that bucket. This stack must be deployed to the organization management
+account.
 
 ### KMS
-The KMS stack will create a KMS key that can be used to encrypt secrets
-for different purposes. The KMS key policy allows everyone to manage
-the key which means that access to the key is fully controlled by IAM
-policies of the users and roles on the account.
 
-The stack also contains an alias that makes it easier to use that key.
+The KMS stack creates a generic KMS key. This can be used to encrypt secrets
+and data in the account. The stack also creates an alias `alias/common` for the
+key.
+
+The KMS key policy allows everyone to manage the key. Access to the key is
+controlled with IAM identity policies only. IAM policies should use the
+encryption context condition keys to limit access to the shared KMS key.
 
 ### Buckets
+
 The buckets stack contains infra-level buckets such as a bucket for build
 artifacts and storing account-wide logs.
 
+### StackSets
 
-### Stack Sets
-The stacksets stack will create CloudFormation stack sets that deploy
-buckets, vpc and subnets to all member accounts.
+The stacksets stack will create CloudFormation StackSets that common infra stacks
+to all member accounts and select regions. Currently the following stacks are
+deployed via StackSets: `CDKToolkit`, `infra-buckets`, `infra-ec2key`, `infra-github-actions`
+and `infra-vpc`
+
+This stack must be deployed to the organization management account or to the delegated
+administrator account for CloudFormation StackSets.
+
+### GitHub Actions
+
+The `infra-github-actions` template creates an AWS IAM OIDC Provider for GitHub
+actions. The provider is created by stack deployed to `eu-west-1` region. In
+other regions the stack only sets up outputs and exports for the ARN of the
+OIDC Provider that can be used in IAM roles deployments to that region.
+
+The `infra-github-actions-roles` template creates IAM roles that GitHub Actions
+can assume. This stack shall be deployed to accounts that GitHub Actions should
+have access to.
