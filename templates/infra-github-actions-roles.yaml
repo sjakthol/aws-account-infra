@@ -38,7 +38,59 @@ Resources:
                 - cloudformation:DeleteStack
               Resource: !Sub arn:${AWS::Partition}:cloudformation:*:${AWS::AccountId}:stack/cfn-monitor-*
 
+  CfnExecuteChangeSetRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action: sts:AssumeRoleWithWebIdentity
+            Principal:
+              Federated: !ImportValue infra-GitHubActionsOidcProvider
+            Condition:
+              StringEquals:
+                token.actions.githubusercontent.com:aud: sts.amazonaws.com
+                sts:RoleSessionName: actions-cfn-execute-change-set
+              StringLike:
+                token.actions.githubusercontent.com:sub: repo:sjakthol/cfn-execute-change-set:*
+      Description: Role for GitHub Actions automation of sjakthol/cfn-execute-change-set project
+      RoleName: !Sub "${AWS::StackName}-CfnExecuteChangeSetRole"
+      Policies:
+        - PolicyName: CfnExecuteChangeSetPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+            - Effect: Allow
+              Action:
+                - cloudformation:ListStacks
+                - logs:DescribeLogGroups
+              Resource: "*"
+            - Effect: Allow
+              Action:
+                - cloudformation:DescribeStackEvents
+                - cloudformation:DescribeStacks
+                - cloudformation:CreateStack
+                - cloudformation:UpdateStack
+                - cloudformation:DeleteStack
+                - cloudformation:CreateChangeSet
+                - cloudformation:DescribeChangeSet
+                - cloudformation:ExecuteChangeSet
+              Resource: !Sub arn:${AWS::Partition}:cloudformation:*:${AWS::AccountId}:stack/cfn-execute-change-set-*
+            - Effect: Allow
+              Action:
+                - logs:CreateLogGroup
+                - logs:DeleteLogGroup
+                - logs:ListTagsForResource
+                - logs:PutRetentionPolicy
+                - logs:TagResource
+              Resource: !Sub arn:${AWS::Partition}:logs:*:${AWS::AccountId}:log-group:cfn-execute-change-set-*
+
 Outputs:
   CfnMonitorRoleArn:
     Description: ARN of the IAM role for GitHub Actions automation of sjakthol/cfn-monitor project
     Value: !GetAtt CfnMonitorRole.Arn
+
+  CfnExecuteChangeSetRoleArn:
+    Description: ARN of the IAM role for GitHub Actions automation of sjakthol/cfn-execute-change-set project
+    Value: !GetAtt CfnExecuteChangeSetRole.Arn
