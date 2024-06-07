@@ -99,7 +99,7 @@ Resources:
             set -o xtrace
 
             # Install some tools
-            dnf install -y docker make git patch tmux htop iotop parallel amazon-ecr-credential-helper python3-pip nodejs
+            dnf install -y docker make git patch tmux htop iotop iftop parallel amazon-ecr-credential-helper python3-pip nodejs
 
             # Setup Docker
             systemctl start docker
@@ -121,8 +121,12 @@ Resources:
 
             # Install Docker buildx
             mkdir -p /usr/local/lib/docker/cli-plugins
-            curl -sSfL --retry 3 "https://github.com/docker/buildx/releases/download/v0.9.1/buildx-v0.9.1.linux-${GoArch}" -o /usr/local/lib/docker/cli-plugins/docker-buildx
+            curl -sSfL --retry 3 "https://github.com/docker/buildx/releases/download/v0.14.1/buildx-v0.14.1.linux-${GoArch}" -o /usr/local/lib/docker/cli-plugins/docker-buildx
             chmod a+x /usr/local/lib/docker/cli-plugins/docker-buildx
+
+            # Install Docker compose
+            curl -sSfL --retry 3 "https://github.com/docker/compose/releases/download/v2.27.1/docker-compose-linux-${AwsCliArch}" -o /usr/local/lib/docker/cli-plugins/docker-compose
+            chmod a+x /usr/local/lib/docker/cli-plugins/docker-compose
 
             # Install kubectl
             curl -sSfL --retry 3 -o /usr/local/bin/kubectl https://s3.us-west-2.amazonaws.com/amazon-eks/1.24.7/2022-10-31/bin/linux/${GoArch}/kubectl
