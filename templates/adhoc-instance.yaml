@@ -83,6 +83,8 @@ Resources:
         ImageId: !If [IsArm, !Ref AmiIdArm, !Ref AmiIdx86]
         InstanceType: !If [IsArm, m6g.xlarge, m6i.xlarge]
         KeyName: sjakthol
+        MetadataOptions:
+          HttpTokens: required
         SecurityGroupIds:
           - !Ref SecurityGroup
         TagSpecifications:
