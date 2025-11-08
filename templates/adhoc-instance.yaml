@@ -14,6 +14,9 @@ Parameters:
       - arm64
       - x86_64
     Default: x86_64
+  SshAllowedIpAddress:
+    Type: String
+    Description: IP address allowed to SSH to the instance
 
 Conditions:
   IsArm: !Equals [!Ref Architecture, arm64]
@@ -24,6 +27,8 @@ Resources:
     Properties:
       GroupDescription: !Sub Security group for ${AWS::StackName}
       GroupName: !Sub ${AWS::StackName}-sg
+      SecurityGroupIngress:
+        - { IpProtocol: tcp, FromPort: 22, ToPort: 22, CidrIp: !Sub "${SshAllowedIpAddress}/32" }
       VpcId: !ImportValue infra-vpc-VpcId
       Tags:
         - { Key: Name, Value: !Sub '${AWS::StackName}-sg' }
@@ -101,34 +106,34 @@ Resources:
             set -o xtrace
 
             # Install some tools
-            dnf install -y docker make git patch tmux htop iotop iftop parallel amazon-ecr-credential-helper python3-pip nodejs
+            dnf install -y dnf-plugins-core make git patch tmux htop iotop iftop parallel amazon-ecr-credential-helper nodejs22
+
+            # Install Docker (https://repost.aws/questions/QU1jeKaTRYQ7WeA7XobfP21g/how-do-i-install-docker-version-27-3-1-on-amazon-linux-2023#AN4OiL2dU1T0ONevG7Y3hO-Q)
+            dnf remove -y docker docker-client docker-client-latest docker-common docker-latest docker-latest-logrotate docker-logrotate docker-engine
+            dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+            sed -i 's/$releasever/9/g' /etc/yum.repos.d/docker-ce.repo
+            dnf -y install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
             # Setup Docker
-            systemctl start docker
+            systemctl enable --now docker
             usermod -aG docker ec2-user
             sudo -u ec2-user mkdir -p /home/ec2-user/.docker
             echo '{"credsStore": "ecr-login"}' | sudo -u ec2-user tee /home/ec2-user/.docker/config.json
 
-            # Upgrade pip
-            python3 -m pip install --upgrade pip
+            # Setup uv
+            curl -LsSf https://astral.sh/uv/install.sh | env UV_INSTALL_DIR=/usr/bin sh
 
-            # Install some Python dev tools
-            python3 -m pip install --upgrade poetry tox
+            # Setup Python
+            for v in 3.11 3.12 3.13 3.14; do sudo -u ec2-user uv python install $v; done
+
+            # Setup nodejs
+            sudo -u ec2-user npm config set prefix /home/ec2-user/.local/
 
             # Install AWS CLI v2
             curl -sSfL --retry 3 "https://awscli.amazonaws.com/awscli-exe-linux-${AwsCliArch}.zip" -o "awscliv2.zip" \
               && unzip -q awscliv2.zip \
               && ./aws/install \
               && rm -rf ./aws awscliv2.zip
-
-            # Install Docker buildx
-            mkdir -p /usr/local/lib/docker/cli-plugins
-            curl -sSfL --retry 3 "https://github.com/docker/buildx/releases/download/v0.14.1/buildx-v0.14.1.linux-${GoArch}" -o /usr/local/lib/docker/cli-plugins/docker-buildx
-            chmod a+x /usr/local/lib/docker/cli-plugins/docker-buildx
-
-            # Install Docker compose
-            curl -sSfL --retry 3 "https://github.com/docker/compose/releases/download/v2.27.1/docker-compose-linux-${AwsCliArch}" -o /usr/local/lib/docker/cli-plugins/docker-compose
-            chmod a+x /usr/local/lib/docker/cli-plugins/docker-compose
 
             # Install kubectl
             curl -sSfL --retry 3 -o /usr/local/bin/kubectl https://s3.us-west-2.amazonaws.com/amazon-eks/1.24.7/2022-10-31/bin/linux/${GoArch}/kubectl
@@ -153,9 +158,9 @@ Resources:
             LaunchTemplateId: !Ref LaunchTemplate
             Version: !GetAtt LaunchTemplate.LatestVersionNumber
           Overrides:
-            - InstanceType: !If [IsArm, m6g.xlarge, m6i.xlarge]
-            - InstanceType: !If [IsArm, r6g.xlarge, r6i.xlarge]
-            - InstanceType: !If [IsArm, c6g.xlarge, c6i.xlarge]
+            - InstanceType: !If [IsArm, m8g.xlarge, m7i.xlarge]
+            - InstanceType: !If [IsArm, r8g.xlarge, r7i.xlarge]
+            - InstanceType: !If [IsArm, c8g.xlarge, c7i.xlarge]
       VPCZoneIdentifier:
         - !ImportValue infra-vpc-sn-public-a
         - !ImportValue infra-vpc-sn-public-b
