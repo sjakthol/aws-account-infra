@@ -1,94 +1,41 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: NAT Gateways for infra VPC
+Description: NAT Gateway for infra VPC
 
 Parameters:
   HighlyAvailable:
     Type: String
-    Description: Whether to create a HA setup (two NATGWs in two AZs) or non-HA setup (one NATGW in AZ-A)
+    Description: Whether to create a HA setup (regional NATGW that can expand to all AZs) or non-HA setup (regional NATGW with AZ-a only)
     AllowedValues:
       - true
       - false
     Default: false
 
-  NatACidr:
-    Type: String
-    Description: CIDR for a subnet to create for NATGW in AZ-A
-    Default: 10.0.255.0/28
-    AllowedPattern : "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})"
-
-  NatBCidr:
-    Type: String
-    Description: CIDR for a subnet to create for NATGW in AZ-B
-    Default: 10.0.255.16/28
-    AllowedPattern : "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})"
-
 Conditions:
-  IsHighlyAvailable: !Equals [!Ref HighlyAvailable, true]
+  IsSingleZone: !Equals [!Ref HighlyAvailable, false]
 
 Resources:
   NatAEIP:
     Type: AWS::EC2::EIP
+    Condition: IsSingleZone
     Properties:
       Domain: vpc
 
-  NatBEIP:
-    Condition: IsHighlyAvailable
-    Type: AWS::EC2::EIP
-    Properties:
-      Domain: vpc
-
-  NatASubnet:
-    Type: "AWS::EC2::Subnet"
-    Properties:
-      AvailabilityZone: !Sub ${AWS::Region}a
-      CidrBlock: !Ref NatACidr
-      MapPublicIpOnLaunch: True
-      Tags:
-        - { Key: Name, Value: !Sub '${AWS::StackName}-natgw-sn-a' }
-      VpcId:
-        Fn::ImportValue: infra-vpc-VpcId
-
-  NatARt:
-    Type: "AWS::EC2::SubnetRouteTableAssociation"
-    Properties:
-      RouteTableId:
-        Fn::ImportValue: infra-vpc-PublicRouteTable
-      SubnetId: !Ref NatASubnet
-
-  NatBSubnet:
-    Type: "AWS::EC2::Subnet"
-    Properties:
-      AvailabilityZone: !Sub ${AWS::Region}b
-      CidrBlock: !Ref NatBCidr
-      MapPublicIpOnLaunch: True
-      Tags:
-        - { Key: Name, Value: !Sub '${AWS::StackName}-natgw-sn-b' }
-      VpcId:
-        Fn::ImportValue: infra-vpc-VpcId
-
-  NatBRt:
-    Type: "AWS::EC2::SubnetRouteTableAssociation"
-    Properties:
-      RouteTableId:
-        Fn::ImportValue: infra-vpc-PublicRouteTable
-      SubnetId: !Ref NatBSubnet
-
-  NatA:
+  NatGateway:
     Type: AWS::EC2::NatGateway
     Properties:
-      AllocationId: !GetAtt NatAEIP.AllocationId
-      SubnetId: !Ref NatASubnet
+      AvailabilityMode: regional
+      AvailabilityZoneAddresses:
+        Fn::If:
+          - IsSingleZone
+          -
+            - AllocationIds:
+                - !GetAtt [NatAEIP, AllocationId]
+              AvailabilityZone: !Sub ${AWS::Region}a
+          - !Ref AWS::NoValue
       Tags:
-        - { Key: Name, Value: !Sub '${AWS::StackName}-natgw-a' }
-
-  NatB:
-    Condition: IsHighlyAvailable
-    Type: AWS::EC2::NatGateway
-    Properties:
-      AllocationId: !GetAtt NatBEIP.AllocationId
-      SubnetId: !Ref NatBSubnet
-      Tags:
-        - { Key: Name, Value: !Sub '${AWS::StackName}-natgw-b' }
+        - { Key: Name, Value: !Sub '${AWS::StackName}-natgateway' }
+      VpcId:
+        Fn::ImportValue: infra-vpc-VpcId
 
   NatARoute:
     Type: AWS::EC2::Route
@@ -96,7 +43,7 @@ Resources:
       RouteTableId:
         Fn::ImportValue: infra-vpc-NatARouteTable
       DestinationCidrBlock: 0.0.0.0/0
-      NatGatewayId: !Ref NatA
+      NatGatewayId: !Ref NatGateway
 
   NatBRoute:
     Type: AWS::EC2::Route
@@ -104,4 +51,4 @@ Resources:
       RouteTableId:
         Fn::ImportValue: infra-vpc-NatBRouteTable
       DestinationCidrBlock: 0.0.0.0/0
-      NatGatewayId: !If [IsHighlyAvailable, !Ref NatB, !Ref NatA]
+      NatGatewayId: !Ref NatGateway
