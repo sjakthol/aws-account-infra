@@ -110,21 +110,21 @@ Other stacks can refer to the subnets with `Fn::ImportValue: <Import Name>` synt
 
 ### NAT
 
-The NAT template deploys a NAT Gateway(s) to the VPC. The stack can be deployed
+The NAT template deploys a regional NAT Gateway to the VPC. The stack can be deployed
 in two modes:
 
-* If `HighlyAvailable` is set to true, the stack creates two NAT Gateways
-  in two AZs (AZ-A and AZ-B) and attach these to the corresponding route table
-  (`nat-a` and `nat-b`). This setup can handle an availability zone failure
-  but costs a bit more due to two running to NAT Gateways.
+* If `HighlyAvailable` is set to true, the stack creates a regional NAT gateway
+  which will automatically expand to all AZs that have active ENIs. This setup
+  can handle an availability zone failure but costs a bit more due to having NAT
+  gateway active in multiple availability zones
 
-* If `HighlyAvailable` is set to false, the stack creates one NAT Gateway to
-  AZ-A of the region. This gateway is attached to both `nat-a` and `nat-b`
-  route tables. This setup is less expensive but it cannot handle a failure
-  of the availability zone that hosts the NAT Gateway. Additionally, traffic
-  from instances using subnets in AZ-B will incur additional charges for cross-AZ traffic.
+* If `HighlyAvailable` is set to false, the stack creates a regional NAT Gateway
+  and configures it to use the AZ-A of the region only. This setup is less expensive
+  but it cannot handle a failure of the availability zone that hosts the NAT Gateway.
+  Additionally, traffic from instances using subnets in other AZs will incur additional
+  charges for cross-AZ traffic.
 
-The template deploys the highly available setup by default.
+The template deploys the non-highly available setup by default.
 
 ### Billing Alarms
 
