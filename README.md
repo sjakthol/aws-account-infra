@@ -21,7 +21,6 @@ The following stacks create infra for each AWS account / region. They should be 
 
 * `adhoc-instance.yaml` - Creates an EC2 instance for ad-hoc development work. Instance is configured with Docker, Node.js and Python.
 * `CDKToolkit.yaml`  - The AWS CDK bootstrap stack.
-* `cloud9-environment` - Creates a Cloud9 environment for ad-hoc development work.
 * `infra-billing-alarms.yaml` - Creates billing alarms that send email alerts if estimated charges go over a pre-defined limit. This can be deployed to the consolidated billing account only or to all accounts separately. This stack is deployed to `us-east-1` region only.
 * `infra-buckets.yaml` - Creates S3 buckets for build artifacts and log storage.
 * `infra-ec2key.yaml` - Deploys an EC2 key pair to be used with EC2 instances.
